@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚾ MLB 예측 대시보드</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            margin: 20px;
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+
+        .control-panel {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .control-panel .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 20px;
+        }
+
+        .control-panel .card-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .control-panel .card-body {
+            padding: 25px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .form-select,
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .form-select:focus,
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #10b981);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #f59e0b);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(217, 119, 6, 0.3);
+        }
+
+        .prediction-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .prediction-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .prediction-card .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .prediction-card .card-body {
+            padding: 20px;
+        }
+
+        .model-section {
+            background: var(--light-bg);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .model-section h6 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .win-probability {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+
+        .score-prediction {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--warning-color);
+        }
+
+        .prediction-trend {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .trend-home {
+            color: var(--success-color);
+        }
+
+        .trend-away {
+            color: var(--danger-color);
+        }
+
+        .trend-close {
+            color: var(--warning-color);
+        }
+
+        .accuracy-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .accuracy-correct {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .accuracy-incorrect {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .accuracy-pending {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .actual-result {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .actual-result h6 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .actual-score {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .badge {
+            font-size: 0.8rem;
+            padding: 0.4em 0.6em;
+        }
+
+        .prediction-info {
+            border-left: 3px solid var(--secondary-color);
+        }
+
+        .team-matchup {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .game-info-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: var(--card-shadow);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .team-matchup {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .pitcher-info {
+            background: var(--light-bg);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .pitcher-name {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .pitcher-stats {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .refresh-btn:hover {
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, var(--success-color), #10b981);
+            color: white;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, var(--danger-color), #ef4444);
+            color: white;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, var(--warning-color), #f59e0b);
+            color: white;
+        }
+
+        .tomorrow-predictions {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .tomorrow-predictions h4 {
+            color: var(--warning-color);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- 헤더 -->
+        <div class="header">
+            <h1><i class="fas fa-baseball-ball"></i> MLB 예측 대시보드</h1>
+            <p>실시간 MLB 경기 예측 및 분석 시스템</p>
+        </div>
+
+        <!-- 제어 패널 -->
+        <div class="control-panel">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs"></i> 예측 설정</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="fas fa-tachometer-alt"></i> 예측 모드</label>
+                        <select id="predictionMode" class="form-select">
+                            <option value="fast">⚡ 빠른모드 (기본 특성)</option>
+                            <option value="full">🎯 일반모드 (상세 특성)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label"><i class="fas fa-database"></i> 데이터 소스</label>
+                        <select id="dataSource" class="form-select">
+                            <option value="recent">📊 최근 200경기</option>
+                            <option value="csv">💾 CSV 파일</option>
+                        </select>
+                    </div>
+                    <!-- CSV 파일 선택 드롭다운 (동적 표시) -->
+                    <div class="col-md-3" id="csvFileSelectContainer" style="display:none;">
+                        <label class="form-label"><i class="fas fa-file-csv"></i> CSV 파일 선택</label>
+                        <select id="csvFileSelect" class="form-select">
+                            <option value="">CSV 파일을 선택하세요</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button id="predictBtn" class="btn btn-primary w-100">
+                            <i class="fas fa-magic"></i> 예측 실행
+                        </button>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <div class="dropdown">
+                            <button id="saveBtn" class="btn btn-success w-100 dropdown-toggle" disabled
+                                data-bs-toggle="dropdown">
+                                <i class="fas fa-save"></i> 결과 저장
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="savePredictions('csv')">
+                                        <i class="fas fa-file-csv"></i> CSV 파일로 저장
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="savePredictions('excel')">
+                                        <i class="fas fa-file-excel"></i> Excel 파일로 저장
+                                    </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="savePredictions('report')">
+                                        <i class="fas fa-file-text"></i> 리포트로 저장
+                                    </a></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 성능 분석 패널 -->
+        <div class="control-panel">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> 성능 분석</h5>
+            </div>
+            <div class="card-body">
+                <button id="analyzeBtn" class="btn btn-success">
+                    <i class="fas fa-analytics"></i> 성능 분석
+                </button>
+                <div id="performanceData" class="mt-3"></div>
+            </div>
+        </div>
+
+        <!-- 오늘 경기 예측 -->
+        <div class="control-panel">
+            <div class="card-header">
+                <h5><i class="fas fa-bullseye"></i> 오늘 경기 예측</h5>
+            </div>
+            <div class="card-body">
+                <div id="predictionsContainer">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> 예측 시스템 안내</h6>
+                        <ul class="mb-0">
+                            <li><strong>실시간 예측:</strong> 오늘 경기에 대한 실시간 예측을 제공합니다</li>
+                            <li><strong>일관성 보장:</strong> 같은 데이터로 예측하면 항상 동일한 결과가 나옵니다</li>
+                            <li><strong>시차 고려:</strong> 한국 시간 기준으로 예측합니다 (미국에서는 내일 경기)</li>
+                        </ul>
+                    </div>
+                    <p class="text-muted text-center">
+                        <i class="fas fa-magic"></i> "예측 실행" 버튼을 클릭하여 오늘 경기 예측을 확인하세요
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 어제 경기 결과 -->
+        <div class="control-panel">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-check"></i> 경기 결과 및 예측 정확도</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label"><i class="fas fa-calendar"></i> 날짜 선택</label>
+                        <input type="date" id="resultDateInput" class="form-control"
+                            max="{{ datetime.utcnow().strftime('%Y-%m-%d') if datetime else '' }}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button id="loadResultBtn" class="btn btn-primary w-100"><i class="fas fa-search"></i> 결과
+                            조회</button>
+                    </div>
+                </div>
+                <div id="todayGamesContainer">
+                    <p class="text-muted text-center">
+                        <i class="fas fa-spinner fa-spin"></i> 경기 결과를 불러오는 중...
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 새로고침 버튼 -->
+        <button class="refresh-btn" onclick="location.reload()" title="페이지 새로고침">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 페이지 로드 시 오늘 경기 정보 로드
+        document.addEventListener('DOMContentLoaded', function () {
+            loadTodayGames();
+            // CSV 파일 목록 불러오기
+            fetchCsvFiles();
+            // 데이터 소스 변경 시 CSV 드롭다운 표시/숨김
+            document.getElementById('dataSource').addEventListener('change', function () {
+                const csvContainer = document.getElementById('csvFileSelectContainer');
+                if (this.value === 'csv') {
+                    csvContainer.style.display = '';
+                } else {
+                    csvContainer.style.display = 'none';
+                }
+            });
+            // 날짜 input에 오늘 날짜 기본값 설정
+            const dateInput = document.getElementById('resultDateInput');
+            if (dateInput) {
+                const today = new Date();
+                dateInput.value = today.toISOString().slice(0, 10);
+            }
+            // 결과 조회 버튼 이벤트
+            document.getElementById('loadResultBtn').addEventListener('click', function () {
+                loadGamesByDate();
+            });
+        });
+
+        // CSV 파일 목록 불러오기
+        function fetchCsvFiles() {
+            fetch('/api/csv-files')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const select = document.getElementById('csvFileSelect');
+                        select.innerHTML = '<option value="">CSV 파일을 선택하세요</option>';
+                        data.files.forEach(file => {
+                            const opt = document.createElement('option');
+                            opt.value = file.name;
+                            opt.textContent = `${file.name} (${file.size}, ${file.modified})`;
+                            select.appendChild(opt);
+                        });
+                    }
+                });
+        }
+
+        // 예측 실행
+        document.getElementById('predictBtn').addEventListener('click', function () {
+            const mode = document.getElementById('predictionMode').value;
+            const dataSource = document.getElementById('dataSource').value;
+            let csvFile = '';
+            if (dataSource === 'csv') {
+                csvFile = document.getElementById('csvFileSelect').value;
+                if (!csvFile) {
+                    showAlert('warning', 'CSV 파일을 선택하세요!');
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-magic"></i> 예측 실행';
+                    return;
+                }
+            }
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 예측 중...';
+
+            // 예측 결과 컨테이너 초기화
+            document.getElementById('predictionsContainer').innerHTML = `
+                <div class="text-center">
+                    <div class="loading-spinner" style="width: 40px; height: 40px; margin: 20px auto;"></div>
+                    <p class="text-muted">AI 모델이 예측을 수행하고 있습니다...</p>
+                </div>
+            `;
+
+            fetch('/api/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mode: mode,
+                    data_source: dataSource,
+                    csv_file: csvFile
+                })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('예측 응답:', data);
+                    if (data.success) {
+                        // 오늘 경기 예측을 표시
+                        displayPredictions(data.predictions);
+                        // 저장 버튼 활성화
+                        document.getElementById('saveBtn').disabled = false;
+                    } else {
+                        document.getElementById('predictionsContainer').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 예측 오류: ${data.error || '알 수 없는 오류'}
+                        </div>
+                    `;
+                    }
+                })
+                .catch(error => {
+                    console.error('예측 오류:', error);
+                    document.getElementById('predictionsContainer').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-wifi"></i> 네트워크 오류: ${error.message}
+                    </div>
+                `;
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-magic"></i> 예측 실행';
+                });
+        });
+
+        // 예측 결과 저장
+        function savePredictions(format) {
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
+
+            fetch('/api/save-current-predictions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    format: format
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', `✅ ${data.message}`);
+
+                        // 파일 다운로드
+                        if (data.filename) {
+                            const link = document.createElement('a');
+                            link.href = `/api/download-file/${data.filename}`;
+                            link.download = data.filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                    } else {
+                        showAlert('danger', `❌ 저장 실패: ${data.error}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('저장 오류:', error);
+                    showAlert('danger', `❌ 저장 오류: ${error.message}`);
+                })
+                .finally(() => {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> 결과 저장';
+                });
+        }
+
+
+
+        // 성능 분석
+        document.getElementById('analyzeBtn').addEventListener('click', function () {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
+
+            document.getElementById('performanceData').innerHTML = `
+                <div class="text-center">
+                    <div class="loading-spinner" style="width: 40px; height: 40px; margin: 20px auto;"></div>
+                    <p class="text-muted">모델 성능을 분석하고 있습니다...</p>
+                </div>
+            `;
+
+            fetch('/api/performance')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('HTTP ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('성능 응답:', data);
+                    if (data.success) {
+                        displayPerformance(data.performance);
+                    } else {
+                        document.getElementById('performanceData').innerHTML =
+                            '<p class="text-danger">성능 분석 오류: ' + (data.error || '알 수 없는 오류') + '</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('성능 분석 오류:', error);
+                    document.getElementById('performanceData').innerHTML =
+                        '<p class="text-danger">네트워크 오류: ' + error.message + '</p>';
+                })
+                .finally(() => {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-analytics"></i> 성능 분석';
+                });
+        });
+
+        function loadTodayGames() {
+            const dateInput = document.getElementById('resultDateInput');
+            if (dateInput) {
+                loadGamesByDate();
+            }
+        }
+
+        // 날짜별 경기 결과 로드
+        function loadGamesByDate() {
+            const date = document.getElementById('resultDateInput').value;
+            if (!date) return;
+            const container = document.getElementById('todayGamesContainer');
+            container.innerHTML = `<p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> 경기 결과를 불러오는 중...</p>`;
+            fetch('/api/check-results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: date })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayYesterdayResults(data.matched_results.map(r => ({ ...r.actual, prediction: r.prediction, accuracy: r.accuracy })), data.date);
+                    } else {
+                        container.innerHTML = `<p class="text-muted">${data.error || '경기 결과가 없습니다'}</p>`;
+                    }
+                })
+                .catch(error => {
+                    container.innerHTML = `<p class="text-danger">데이터 로드 오류: ${error.message}</p>`;
+                });
+        }
+
+
+
+        function displayYesterdayResults(results, date) {
+            const container = document.getElementById('todayGamesContainer');
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-calendar-times"></i> ${date}의 경기 결과가 없습니다.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `<div class="alert alert-info mb-3">
+                <h6><i class="fas fa-calendar-check"></i> ${date} 경기 결과</h6>
+                <p class="mb-0">총 ${results.length}경기</p>
+            </div>`;
+
+            html += '<div class="row">';
+            results.forEach(result => {
+                // 승패 배지
+                const winnerBadge = result.winner === 'home' ?
+                    `<span class="badge bg-success">${result.home_team} 승</span>` :
+                    `<span class="badge bg-success">${result.away_team} 승</span>`;
+
+                // 예측 정확도 배지
+                let accuracyBadge = '';
+                if (result.accuracy) {
+                    const accuracyClass = result.accuracy.win_correct ? 'bg-success' : 'bg-danger';
+                    const accuracyText = result.accuracy.win_correct ? '예측 적중' : '예측 실패';
+                    accuracyBadge = `<span class="badge ${accuracyClass} ms-2">${accuracyText}</span>`;
+                } else if (result.prediction) {
+                    accuracyBadge = '<span class="badge bg-warning ms-2">예측 없음</span>';
+                } else {
+                    accuracyBadge = '';
+                }
+
+                // 예측 정보
+                let predictionInfo = '';
+                if (result.prediction) {
+                    const pred = result.prediction;
+                    predictionInfo = `
+                        <div class="prediction-info mt-2 p-2 bg-light rounded">
+                            <small class="text-muted">
+                                <strong>예측:</strong> RF ${pred.rf_away_score}-${pred.rf_home_score} (홈승률: ${(pred.rf_home_win_prob * 100).toFixed(1)}%) | 
+                                XGB ${pred.xgb_away_score}-${pred.xgb_home_score} (홈승률: ${(pred.xgb_home_win_prob * 100).toFixed(1)}%)
+                            </small>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="game-info-card">
+                            <div class="team-matchup d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-baseball-ball"></i> ${result.away_team} @ ${result.home_team}
+                                </div>
+                                <div>
+                                    ${winnerBadge}${accuracyBadge}
+                                </div>
+                            </div>
+                            <div class="actual-score mt-2 p-2 bg-primary text-white rounded text-center">
+                                <h5 class="mb-0">${result.away_score} - ${result.home_score}</h5>
+                                <small>실제 결과</small>
+                            </div>
+                            ${predictionInfo}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function displayPredictions(predictions) {
+            const container = document.getElementById('predictionsContainer');
+            if (!predictions || predictions.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 예측 결과가 없습니다.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row">';
+            predictions.forEach(pred => {
+                // 기존 모델 결과 표시
+                const rfWinner = pred.rf_home_win_prob > 0.6 ? '홈팀 우세' :
+                    pred.rf_away_win_prob > 0.6 ? '원정팀 우세' : '접전 예상';
+                const xgbWinner = pred.xgb_home_win_prob > 0.6 ? '홈팀 우세' :
+                    pred.xgb_away_win_prob > 0.6 ? '원정팀 우세' : '접전 예상';
+
+                const rfTrendClass = pred.rf_home_win_prob > 0.6 ? 'trend-home' :
+                    pred.rf_away_win_prob > 0.6 ? 'trend-away' : 'trend-close';
+                const xgbTrendClass = pred.xgb_home_win_prob > 0.6 ? 'trend-home' :
+                    pred.xgb_away_win_prob > 0.6 ? 'trend-away' : 'trend-close';
+
+                // 적중률 배지
+                let accuracyBadge = '';
+                if (pred.accuracy) {
+                    const accuracyClass = pred.accuracy.win_correct ? 'accuracy-correct' : 'accuracy-incorrect';
+                    const accuracyText = pred.accuracy.win_correct ? '적중' : '실패';
+                    accuracyBadge = `<span class="accuracy-badge ${accuracyClass}">${accuracyText}</span>`;
+                } else {
+                    accuracyBadge = '<span class="accuracy-badge accuracy-pending">대기중</span>';
+                }
+
+                // 실제 결과 표시
+                let actualResultHtml = '';
+                if (pred.actual_result) {
+                    actualResultHtml = `
+                            <div class="actual-result">
+                                <h6><i class="fas fa-trophy"></i> 실제 결과</h6>
+                                <div class="actual-score">
+                                    ${pred.actual_result.home_team} ${pred.actual_result.home_score} - ${pred.actual_result.away_score} ${pred.actual_result.away_team}
+                                </div>
+                                <small class="text-muted">
+                                    승리: ${pred.actual_result.winner === 'home' ? pred.actual_result.home_team : pred.actual_result.away_team}
+                                </small>
+                            </div>
+                        `;
+                }
+
+                html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="prediction-card">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-trophy"></i> ${pred.away_team} @ ${pred.home_team} ${accuracyBadge}</h6>
+                                    <small><i class="fas fa-clock"></i> ${pred.game_time_kst || '시간 미정'}</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="pitcher-info mb-3">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <div class="pitcher-name">
+                                                    <i class="fas fa-user"></i> ${pred.away_team} 선발: ${pred.away_pitcher || '미정'}
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="pitcher-name">
+                                                    <i class="fas fa-user"></i> ${pred.home_team} 선발: ${pred.home_pitcher || '미정'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="model-section">
+                                                <h6><i class="fas fa-tree"></i> RandomForest</h6>
+                                                <div class="win-probability">
+                                                    ${(pred.rf_home_win_prob * 100).toFixed(1)}%
+                                                </div>
+                                                <div class="score-prediction">
+                                                    ${pred.rf_home_score} - ${pred.rf_away_score}
+                                                </div>
+                                                <div class="prediction-trend ${rfTrendClass}">
+                                                    <i class="fas fa-chart-line"></i> ${rfWinner}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="model-section">
+                                                <h6><i class="fas fa-rocket"></i> XGBoost</h6>
+                                                <div class="win-probability">
+                                                    ${(pred.xgb_home_win_prob * 100).toFixed(1)}%
+                                                </div>
+                                                <div class="score-prediction">
+                                                    ${pred.xgb_home_score} - ${pred.xgb_away_score}
+                                                </div>
+                                                <div class="prediction-trend ${xgbTrendClass}">
+                                                    <i class="fas fa-chart-line"></i> ${xgbWinner}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    ${actualResultHtml}
+                                    <div class="mt-3 pt-3 border-top">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> 예측 시간: ${pred.prediction_time || 'N/A'} | 
+                                            <i class="fas fa-database"></i> 데이터: ${pred.data_count || 'N/A'}개 경기
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+
+
+
+
+        function displayPerformance(performance) {
+            const container = document.getElementById('performanceData');
+            container.innerHTML = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">
+                            <i class="fas fa-gamepad"></i> ${performance.total_games}
+                        </div>
+                        <div class="stat-label">총 예측 경기</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">
+                            <i class="fas fa-bullseye"></i> ${(performance.win_accuracy * 100).toFixed(1)}%
+                        </div>
+                        <div class="stat-label">승패 예측 정확도</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">
+                            <i class="fas fa-chart-bar"></i> ${performance.mean_total_error.toFixed(2)}
+                        </div>
+                        <div class="stat-label">평균 총점 오차</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">
+                            <i class="fas fa-home"></i> ${performance.mean_home_error.toFixed(2)}
+                        </div>
+                        <div class="stat-label">홈팀 점수 오차</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            // 페이지 상단에 알림 표시
+            const mainContainer = document.querySelector('.main-container');
+            mainContainer.insertBefore(alertDiv, mainContainer.firstChild);
+
+            // 5초 후 자동 제거
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>
