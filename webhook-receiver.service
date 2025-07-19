@@ -1,0 +1,16 @@
+[Unit]
+Description=GitHub Webhook Receiver
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/MLB-Proph
+Environment=WEBHOOK_SECRET=your-webhook-secret
+Environment=PROJECT_DIR=/home/ubuntu/MLB-Proph
+ExecStart=/usr/bin/python3 /home/ubuntu/MLB-Proph/webhook-receiver.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 
