@@ -11,10 +11,13 @@ services:
       - ./data:/app/data
       # 로그 파일들을 볼륨으로 마운트
       - ./logs:/app/logs
+      # 출력 로그 파일 마운트
+      - ./output.log:/app/output.log
     environment:
       - FLASK_APP=mlb_dashboard.py
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+    command: python mlb_dashboard.py > output.log 2>&1
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]

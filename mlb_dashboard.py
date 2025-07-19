@@ -18,9 +18,17 @@ import pytz
 
 app = Flask(__name__)
 
+# 디버그 모드 활성화
+app.debug = True
+
 # 전역 변수로 예측 결과 저장
 current_predictions = []
 performance_data = None
+
+# 로깅 설정
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # 예측 결과 저장 파일
 PREDICTIONS_FILE = 'predictions_history.json'
@@ -393,12 +401,19 @@ def make_prediction():
         mode = data.get('mode', 'fast')  # fast 또는 full
         data_source = data.get('data_source', 'recent')  # recent 또는 csv
         
+        logger.info(f"예측 요청 시작: mode={mode}, data_source={data_source}")
         print(f"예측 요청: mode={mode}, data_source={data_source}")
         
         # 기존 모드들 (fast, full)
         if data_source == 'recent':
+            logger.info("최근 200경기 데이터 수집 시작...")
             print("최근 200경기 데이터 수집 중...")
-            df_historical = get_recent_data(n_games=200)
+            try:
+                df_historical = get_recent_data(n_games=200)
+                logger.info(f"데이터 수집 완료: {len(df_historical) if df_historical is not None else 0}개 경기")
+            except Exception as e:
+                logger.error(f"데이터 수집 실패: {e}")
+                return jsonify({'success': False, 'error': f'데이터 수집 실패: {str(e)}'})
         else:
             csv_file = data.get('csv_file')
             # 항상 자동 업데이트 시도
@@ -409,10 +424,17 @@ def make_prediction():
                 if csv_candidates:
                     csv_file = max(csv_candidates, key=os.path.getmtime)
                 else:
+                    logger.error("CSV 파일이 없습니다.")
                     print("CSV 파일이 없습니다.")
                     return jsonify({'success': False, 'error': 'CSV 파일이 없습니다.'})
+            logger.info(f"CSV 파일 자동 업데이트 시작: {csv_file}")
             print(f"CSV 파일 자동 업데이트 중: {csv_file}")
-            df_historical = check_and_update_csv_data(csv_file, min_games=50, days_back=30, include_today=True)
+            try:
+                df_historical = check_and_update_csv_data(csv_file, min_games=50, days_back=30, include_today=True)
+                logger.info(f"CSV 업데이트 완료: {len(df_historical) if df_historical is not None else 0}개 경기")
+            except Exception as e:
+                logger.error(f"CSV 업데이트 실패: {e}")
+                return jsonify({'success': False, 'error': f'CSV 업데이트 실패: {str(e)}'})
         
         if df_historical is None or len(df_historical) == 0:
             return jsonify({'success': False, 'error': '과거 데이터를 수집할 수 없습니다.'})

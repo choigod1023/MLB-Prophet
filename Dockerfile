@@ -27,5 +27,5 @@ EXPOSE 5000
 ENV FLASK_APP=mlb_dashboard.py
 ENV FLASK_ENV=production
 
-# 애플리케이션 실행
-CMD ["python", "mlb_dashboard.py"] 
+# 애플리케이션 실행 (로그 파일로 출력)
+CMD ["sh", "-c", "python mlb_dashboard.py > output.log 2>&1"] 
