@@ -3,8 +3,7 @@ name: Auto Deploy to Server
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch: # 수동 실행 가능
 
 jobs:
   deploy:
@@ -37,7 +36,24 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
+            echo "🚀 자동 배포 시작..."
             cd ~/MLB-Proph
+
+            # 기존 컨테이너 중지
+            echo "🛑 기존 컨테이너 중지 중..."
+            docker-compose down || true
+
+            # 코드 업데이트
+            echo "📥 코드 업데이트 중..."
             git pull origin main
-            chmod +x deploy.sh
-            ./deploy.sh
+
+            # 배포 스크립트 실행
+            echo "🔧 배포 스크립트 실행 중..."
+            chmod +x deploy-simple.sh
+            ./deploy-simple.sh
+
+            # 배포 확인
+            echo "✅ 배포 완료! 상태 확인 중..."
+            docker-compose ps
+
+            echo "🌐 서버가 http://${{ secrets.SERVER_HOST }}:5000 에서 실행 중입니다."
