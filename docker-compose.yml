@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  mlb-backend:
+    build: .
+    container_name: mlb-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      # 데이터 파일들을 볼륨으로 마운트 (선택사항)
+      - ./data:/app/data
+      # 로그 파일들을 볼륨으로 마운트
+      - ./logs:/app/logs
+    environment:
+      - FLASK_APP=mlb_dashboard.py
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
