@@ -19,7 +19,6 @@ COPY *.py .
 COPY *.csv .
 COPY *.json .
 COPY templates/ templates/
-COPY mlb-frontend/dist/ mlb-frontend/dist/
 
 # 포트 5000 노출
 EXPOSE 5000
