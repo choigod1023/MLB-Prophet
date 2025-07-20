@@ -452,6 +452,9 @@ def make_prediction():
         # 실제 예측 실행
         fast_mode = (mode == 'fast')
         
+        # 개선된 예측 함수 사용
+        from mlb_utils import predict_score_with_margin
+        
         # 예측 결과를 캡처하기 위한 임시 함수
         def capture_prediction_results(df_hist, df_today, fast_mode):
             """예측 결과를 캡처하여 반환하는 함수"""
@@ -570,29 +573,87 @@ def make_prediction():
                             print(f"[home_id/away_id 매핑 오류] {e}")
                     # --- home_id/away_id 보장 끝 ---
 
-                    pred = {
-                        'prediction_date': prediction_date,
-                        'prediction_time': prediction_time,
-                        'home_team': str(row['home_team']),
-                        'away_team': str(row['away_team']),
-                        'home_id': home_id,
-                        'away_id': away_id,
-                        'home_pitcher': home_pitcher,
-                        'away_pitcher': away_pitcher,
-                        'game_time_kst': game_time_kst,
-                        'rf_home_win_prob': float(max(0.05, min(0.95, rf_home_win_prob))),
-                        'rf_away_win_prob': float(max(0.05, min(0.95, 1 - rf_home_win_prob))),
-                        'rf_home_score': int(max(0, rf_home_score)),
-                        'rf_away_score': int(max(0, rf_away_score)),
-                        'xgb_home_win_prob': float(max(0.05, min(0.95, xgb_home_win_prob))),
-                        'xgb_away_win_prob': float(max(0.05, min(0.95, 1 - xgb_home_win_prob))),
-                        'xgb_home_score': int(max(0, xgb_home_score)),
-                        'xgb_away_score': int(max(0, xgb_away_score)),
-                        'mode': str(mode),
-                        'data_count': len(df_hist),
-                        'actual_result': None,  # 나중에 업데이트
-                        'accuracy': None  # 나중에 업데이트
-                    }
+                    # 개선된 예측 결과 사용
+                    try:
+                        score_prediction = predict_score_with_margin(df_hist, pd.DataFrame([row]), fast_mode)
+                        
+                        if score_prediction and len(score_prediction[0]) > 0:
+                            pred_result = score_prediction[0][0]
+                            
+                            pred = {
+                                'prediction_date': prediction_date,
+                                'prediction_time': prediction_time,
+                                'home_team': str(row['home_team']),
+                                'away_team': str(row['away_team']),
+                                'home_id': home_id,
+                                'away_id': away_id,
+                                'home_pitcher': home_pitcher,
+                                'away_pitcher': away_pitcher,
+                                'game_time_kst': game_time_kst,
+                                'home_score': pred_result['home_score'],
+                                'away_score': pred_result['away_score'],
+                                'score_margin': pred_result['score_margin'],
+                                'margin_category': pred_result['margin_category'],
+                                'home_win_prob': pred_result['home_win_prob'],
+                                'away_win_prob': pred_result['away_win_prob'],
+                                'predicted_winner': pred_result['predicted_winner'],
+                                'confidence': pred_result['confidence'],
+                                'mode': str(mode),
+                                'data_count': len(df_hist),
+                                'actual_result': None,  # 나중에 업데이트
+                                'accuracy': None  # 나중에 업데이트
+                            }
+                        else:
+                            # 기존 방식으로 폴백
+                            pred = {
+                                'prediction_date': prediction_date,
+                                'prediction_time': prediction_time,
+                                'home_team': str(row['home_team']),
+                                'away_team': str(row['away_team']),
+                                'home_id': home_id,
+                                'away_id': away_id,
+                                'home_pitcher': home_pitcher,
+                                'away_pitcher': away_pitcher,
+                                'game_time_kst': game_time_kst,
+                                'rf_home_win_prob': float(max(0.05, min(0.95, rf_home_win_prob))),
+                                'rf_away_win_prob': float(max(0.05, min(0.95, 1 - rf_home_win_prob))),
+                                'rf_home_score': int(max(0, rf_home_score)),
+                                'rf_away_score': int(max(0, rf_away_score)),
+                                'xgb_home_win_prob': float(max(0.05, min(0.95, xgb_home_win_prob))),
+                                'xgb_away_win_prob': float(max(0.05, min(0.95, 1 - xgb_home_win_prob))),
+                                'xgb_home_score': int(max(0, xgb_home_score)),
+                                'xgb_away_score': int(max(0, xgb_away_score)),
+                                'mode': str(mode),
+                                'data_count': len(df_hist),
+                                'actual_result': None,  # 나중에 업데이트
+                                'accuracy': None  # 나중에 업데이트
+                            }
+                    except Exception as e:
+                        print(f"개선된 예측 실패, 기존 방식 사용: {e}")
+                        # 기존 방식으로 폴백
+                        pred = {
+                            'prediction_date': prediction_date,
+                            'prediction_time': prediction_time,
+                            'home_team': str(row['home_team']),
+                            'away_team': str(row['away_team']),
+                            'home_id': home_id,
+                            'away_id': away_id,
+                            'home_pitcher': home_pitcher,
+                            'away_pitcher': away_pitcher,
+                            'game_time_kst': game_time_kst,
+                            'rf_home_win_prob': float(max(0.05, min(0.95, rf_home_win_prob))),
+                            'rf_away_win_prob': float(max(0.05, min(0.95, 1 - rf_home_win_prob))),
+                            'rf_home_score': int(max(0, rf_home_score)),
+                            'rf_away_score': int(max(0, rf_away_score)),
+                            'xgb_home_win_prob': float(max(0.05, min(0.95, xgb_home_win_prob))),
+                            'xgb_away_win_prob': float(max(0.05, min(0.95, 1 - xgb_home_win_prob))),
+                            'xgb_home_score': int(max(0, xgb_home_score)),
+                            'xgb_away_score': int(max(0, xgb_away_score)),
+                            'mode': str(mode),
+                            'data_count': len(df_hist),
+                            'actual_result': None,  # 나중에 업데이트
+                            'accuracy': None  # 나중에 업데이트
+                        }
                     predictions.append(pred)
                 
                 print(f"예측 완료: {len(predictions)}개 경기 (시간: {prediction_time})")
@@ -614,9 +675,14 @@ def make_prediction():
         
         current_predictions = predictions
         
+        # 베팅 기회 분석
+        from mlb_utils import analyze_betting_opportunities
+        betting_analysis = analyze_betting_opportunities(predictions)
+        
         return jsonify({
             'success': True,
             'predictions': predictions,
+            'betting_analysis': betting_analysis,
             'data_count': len(df_historical),
             'mode': mode
         })

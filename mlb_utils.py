@@ -409,3 +409,195 @@ def analyze_and_report_performance(predictions, actual_results):
         'mean_away_error': total_away_error / total_games,
         'mean_total_error': total_error / total_games
     } 
+
+def predict_score_with_margin(df_historical, df_today, fast_mode=False):
+    """
+    개선된 스코어 예측 함수 - 점수차와 승리 확률을 함께 예측
+    """
+    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+    from xgboost import XGBRegressor
+    import numpy as np
+    
+    # 특성 선택
+    if fast_mode:
+        features = [
+            'home_pitcher_era', 'home_ops', 'home_era',
+            'away_pitcher_era', 'away_ops', 'away_era'
+        ]
+    else:
+        features = [
+            'home_pitcher_era', 'home_pitcher_whip', 'home_bullpen_era',
+            'home_ops', 'home_avg', 'home_slg', 'home_era', 'home_whip',
+            'away_pitcher_era', 'away_pitcher_whip', 'away_bullpen_era',
+            'away_ops', 'away_avg', 'away_slg', 'away_era', 'away_whip'
+        ]
+    
+    # 데이터 전처리
+    df_selected = df_historical[features + ['home_score', 'away_score', 'home_win']].copy()
+    df_selected = df_selected.dropna()
+    
+    if len(df_selected) < 50:
+        return None, "데이터가 부족합니다 (50개 미만)"
+    
+    # 점수차 계산
+    df_selected['score_margin'] = df_selected['home_score'] - df_selected['away_score']
+    
+    # 특성 스케일링
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+    X = df_selected[features]
+    X_scaled = scaler.fit_transform(X)
+    
+    # 모델 학습
+    np.random.seed(42)
+    
+    # 1. 홈팀 점수 예측
+    home_score_model = XGBRegressor(
+        n_estimators=200, 
+        max_depth=8, 
+        learning_rate=0.1,
+        random_state=42,
+        subsample=0.8,
+        colsample_bytree=0.8
+    )
+    home_score_model.fit(X_scaled, df_selected['home_score'])
+    
+    # 2. 원정팀 점수 예측
+    away_score_model = XGBRegressor(
+        n_estimators=200, 
+        max_depth=8, 
+        learning_rate=0.1,
+        random_state=42,
+        subsample=0.8,
+        colsample_bytree=0.8
+    )
+    away_score_model.fit(X_scaled, df_selected['away_score'])
+    
+    # 3. 점수차 예측
+    margin_model = XGBRegressor(
+        n_estimators=200, 
+        max_depth=8, 
+        learning_rate=0.1,
+        random_state=42,
+        subsample=0.8,
+        colsample_bytree=0.8
+    )
+    margin_model.fit(X_scaled, df_selected['score_margin'])
+    
+    # 4. 승리 확률 예측
+    win_prob_model = XGBRegressor(
+        n_estimators=200, 
+        max_depth=8, 
+        learning_rate=0.1,
+        random_state=42,
+        subsample=0.8,
+        colsample_bytree=0.8
+    )
+    win_prob_model.fit(X_scaled, df_selected['home_win'])
+    
+    # 예측 실행
+    predictions = []
+    
+    for _, row in df_today.iterrows():
+        # 누락된 특성 처리
+        missing_features = [f for f in features if pd.isna(row[f])]
+        if missing_features:
+            continue
+        
+        X_pred = row[features].values.reshape(1, -1)
+        X_pred_scaled = scaler.transform(X_pred)
+        
+        # 점수 예측
+        home_score_raw = home_score_model.predict(X_pred_scaled)[0]
+        away_score_raw = away_score_model.predict(X_pred_scaled)[0]
+        margin_raw = margin_model.predict(X_pred_scaled)[0]
+        win_prob_raw = win_prob_model.predict(X_pred_scaled)[0]
+        
+        # 점수 정수화 및 조정
+        home_score = max(0, int(round(home_score_raw)))
+        away_score = max(0, int(round(away_score_raw)))
+        
+        # 점수차 기반으로 승리 확률 조정
+        if home_score > away_score:
+            win_prob = min(0.95, max(0.05, win_prob_raw + 0.1))
+        elif away_score > home_score:
+            win_prob = min(0.95, max(0.05, win_prob_raw - 0.1))
+        else:
+            win_prob = 0.5
+        
+        # 점수차 계산
+        score_margin = home_score - away_score
+        
+        # 베팅 관련 정보
+        margin_category = "대승" if abs(score_margin) >= 5 else "소승" if abs(score_margin) >= 2 else "접전"
+        
+        prediction = {
+            'home_score': home_score,
+            'away_score': away_score,
+            'score_margin': score_margin,
+            'margin_category': margin_category,
+            'home_win_prob': win_prob,
+            'away_win_prob': 1 - win_prob,
+            'predicted_winner': 'home' if home_score > away_score else 'away' if away_score > home_score else 'tie',
+            'confidence': abs(win_prob - 0.5) * 2  # 0~1 사이의 신뢰도
+        }
+        
+        predictions.append(prediction)
+    
+    return predictions, None 
+
+def analyze_betting_opportunities(predictions):
+    """
+    베팅 기회 분석 함수
+    """
+    betting_opportunities = []
+    
+    for pred in predictions:
+        confidence = pred.get('confidence', 0)
+        margin_category = pred.get('margin_category', '접전')
+        home_win_prob = pred.get('home_win_prob', 0.5)
+        
+        # 베팅 기회 판단 기준
+        betting_score = 0
+        betting_reason = []
+        
+        # 1. 높은 신뢰도 (70% 이상)
+        if confidence >= 0.7:
+            betting_score += 30
+            betting_reason.append(f"높은 신뢰도 ({confidence:.1%})")
+        
+        # 2. 명확한 승리 예측 (60% 이상)
+        if home_win_prob >= 0.6 or home_win_prob <= 0.4:
+            betting_score += 25
+            betting_reason.append(f"명확한 승리 예측 ({home_win_prob:.1%})")
+        
+        # 3. 점수차 분석
+        if margin_category == "대승":
+            betting_score += 20
+            betting_reason.append("대승 예측")
+        elif margin_category == "소승":
+            betting_score += 15
+            betting_reason.append("소승 예측")
+        
+        # 4. 베팅 추천 등급
+        if betting_score >= 60:
+            recommendation = "강력 추천"
+        elif betting_score >= 40:
+            recommendation = "추천"
+        elif betting_score >= 20:
+            recommendation = "관심"
+        else:
+            recommendation = "관망"
+        
+        betting_opportunities.append({
+            'game': f"{pred['away_team']} @ {pred['home_team']}",
+            'predicted_winner': pred.get('predicted_winner', 'unknown'),
+            'home_win_prob': home_win_prob,
+            'confidence': confidence,
+            'margin_category': margin_category,
+            'betting_score': betting_score,
+            'betting_reason': betting_reason,
+            'recommendation': recommendation
+        })
+    
+    return betting_opportunities 
