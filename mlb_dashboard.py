@@ -229,6 +229,20 @@ def calculate_prediction_accuracy(prediction, actual_result):
         'actual_winner': actual_winner
     }
 
+def convert_np(obj):
+    import numpy as np
+    if isinstance(obj, dict):
+        return {k: convert_np(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_np(v) for v in obj]
+    elif isinstance(obj, (np.integer,)):
+        return int(obj)
+    elif isinstance(obj, (np.floating,)):
+        return float(obj)
+    elif hasattr(obj, 'item'):
+        return obj.item()
+    else:
+        return obj
 
 
 @app.route('/')
@@ -691,8 +705,8 @@ def make_prediction():
         
         return jsonify({
             'success': True,
-            'predictions': predictions,
-            'betting_analysis': betting_analysis,
+            'predictions': convert_np(predictions),
+            'betting_analysis': convert_np(betting_analysis),
             'data_count': len(df_historical),
             'mode': mode
         })
