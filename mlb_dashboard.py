@@ -573,12 +573,14 @@ def make_prediction():
                             print(f"[home_id/away_id 매핑 오류] {e}")
                     # --- home_id/away_id 보장 끝 ---
 
-                    # 개선된 예측 결과 사용
+                                                # 개선된 예측 결과 사용
                     try:
+                        print(f"🔍 예측 시작: {row.get('away_team', 'N/A')} @ {row.get('home_team', 'N/A')}")
                         score_prediction = predict_score_with_margin(df_hist, pd.DataFrame([row]), fast_mode)
                         
                         if score_prediction and len(score_prediction[0]) > 0:
                             pred_result = score_prediction[0][0]
+                            print(f"✅ 예측 성공: {pred_result}")
                             
                             pred = {
                                 'prediction_date': prediction_date,
@@ -590,20 +592,28 @@ def make_prediction():
                                 'home_pitcher': home_pitcher,
                                 'away_pitcher': away_pitcher,
                                 'game_time_kst': game_time_kst,
-                                'home_score': pred_result['home_score'],
-                                'away_score': pred_result['away_score'],
+                                # 새로운 예측 결과를 기존 구조로 매핑
+                                'rf_home_win_prob': pred_result['home_win_prob'],
+                                'rf_away_win_prob': pred_result['away_win_prob'],
+                                'rf_home_score': pred_result['home_score'],
+                                'rf_away_score': pred_result['away_score'],
+                                'xgb_home_win_prob': pred_result['home_win_prob'],
+                                'xgb_away_win_prob': pred_result['away_win_prob'],
+                                'xgb_home_score': pred_result['home_score'],
+                                'xgb_away_score': pred_result['away_score'],
+                                # 추가 정보
                                 'score_margin': pred_result['score_margin'],
                                 'margin_category': pred_result['margin_category'],
-                                'home_win_prob': pred_result['home_win_prob'],
-                                'away_win_prob': pred_result['away_win_prob'],
                                 'predicted_winner': pred_result['predicted_winner'],
                                 'confidence': pred_result['confidence'],
+                                'game_situation': pred_result.get('game_situation', '일반 경기'),
                                 'mode': str(mode),
                                 'data_count': len(df_hist),
                                 'actual_result': None,  # 나중에 업데이트
                                 'accuracy': None  # 나중에 업데이트
                             }
                         else:
+                            print(f"❌ 예측 실패: {score_prediction}")
                             # 기존 방식으로 폴백
                             pred = {
                                 'prediction_date': prediction_date,
