@@ -18,6 +18,22 @@ import pytz
 
 app = Flask(__name__)
 
+# === numpy 타입 자동 변환을 위한 Flask 커스텀 인코더 추가 ===
+from flask.json import JSONEncoder
+class NumpyEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        elif isinstance(obj, (np.floating,)):
+            return float(obj)
+        elif isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        elif hasattr(obj, 'item'):
+            return obj.item()
+        return super().default(obj)
+app.json_encoder = NumpyEncoder
+# === 커스텀 인코더 끝 ===
+
 # 디버그 모드 활성화
 app.debug = True
 
