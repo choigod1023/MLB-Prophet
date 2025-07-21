@@ -272,6 +272,10 @@ def convert_np(obj):
         return int(obj)
     elif isinstance(obj, (np.floating,)):
         return float(obj)
+    elif isinstance(obj, (np.ndarray,)):
+        return [convert_np(x) for x in obj.tolist()]
+    elif isinstance(obj, (np.bool_)):
+        return bool(obj)
     elif hasattr(obj, 'item'):
         return obj.item()
     else:
@@ -724,7 +728,7 @@ def make_prediction():
         
         # 실제 예측 실행
         predictions = capture_prediction_results(df_historical, df_today, fast_mode)
-        
+        predictions = convert_np(predictions)
         # 예측 결과를 파일에 저장
         predictions_history = load_predictions_history()
         predictions_history.extend(predictions)
@@ -735,11 +739,12 @@ def make_prediction():
         # 베팅 기회 분석
         from mlb_utils import analyze_betting_opportunities
         betting_analysis = analyze_betting_opportunities(predictions)
+        betting_analysis = convert_np(betting_analysis)
         
         return jsonify({
             'success': True,
-            'predictions': convert_np(predictions),
-            'betting_analysis': convert_np(betting_analysis),
+            'predictions': predictions,
+            'betting_analysis': betting_analysis,
             'data_count': len(df_historical),
             'mode': mode
         })
