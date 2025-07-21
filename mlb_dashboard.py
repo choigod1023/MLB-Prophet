@@ -15,24 +15,41 @@ import numpy as np
 from datetime import datetime, timedelta
 import json
 import pytz
+import flask
 
 app = Flask(__name__)
 
-# === numpy 타입 자동 변환을 위한 Flask 커스텀 인코더 추가 ===
-from flask.json import JSONEncoder
-class NumpyEncoder(JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, (np.integer,)):
-            return int(obj)
-        elif isinstance(obj, (np.floating,)):
-            return float(obj)
-        elif isinstance(obj, (np.ndarray,)):
-            return obj.tolist()
-        elif hasattr(obj, 'item'):
-            return obj.item()
-        return super().default(obj)
-app.json_encoder = NumpyEncoder
-# === 커스텀 인코더 끝 ===
+# === numpy 타입 자동 변환을 위한 Flask 커스텀 인코더/Provider 버전별 적용 ===
+flask_version = tuple(map(int, flask.__version__.split(".")[:2]))
+if flask_version >= (2, 3):
+    from flask.json.provider import DefaultJSONProvider
+    class NumpyJSONProvider(DefaultJSONProvider):
+        def default(self, obj):
+            if isinstance(obj, (np.integer,)):
+                return int(obj)
+            elif isinstance(obj, (np.floating,)):
+                return float(obj)
+            elif isinstance(obj, (np.ndarray,)):
+                return obj.tolist()
+            elif hasattr(obj, 'item'):
+                return obj.item()
+            return super().default(obj)
+    app.json = NumpyJSONProvider(app)
+else:
+    from flask.json import JSONEncoder
+    class NumpyEncoder(JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, (np.integer,)):
+                return int(obj)
+            elif isinstance(obj, (np.floating,)):
+                return float(obj)
+            elif isinstance(obj, (np.ndarray,)):
+                return obj.tolist()
+            elif hasattr(obj, 'item'):
+                return obj.item()
+            return super().default(obj)
+    app.json_encoder = NumpyEncoder
+# === 커스텀 인코더/Provider 끝 ===
 
 # 디버그 모드 활성화
 app.debug = True
@@ -61,7 +78,7 @@ def load_predictions_history():
 def save_predictions_history(predictions_data):
     try:
         with open(PREDICTIONS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(predictions_data, f, ensure_ascii=False, indent=2)
+            json.dump(convert_np(predictions_data), f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"예측 기록 저장 오류: {e}")
 
@@ -83,24 +100,24 @@ def save_predictions_to_csv(predictions, filename=None):
                 '홈팀': pred.get('home_team', ''),
                 '원정선발': pred.get('away_pitcher', ''),
                 '홈선발': pred.get('home_pitcher', ''),
-                'RF_홈승률': f"{pred.get('rf_home_win_prob', 0)*100:.1f}%",
-                'RF_원정승률': f"{pred.get('rf_away_win_prob', 0)*100:.1f}%",
-                'RF_홈점수': pred.get('rf_home_score', 0),
-                'RF_원정점수': pred.get('rf_away_score', 0),
-                'XGB_홈승률': f"{pred.get('xgb_home_win_prob', 0)*100:.1f}%",
-                'XGB_원정승률': f"{pred.get('xgb_away_win_prob', 0)*100:.1f}%",
-                'XGB_홈점수': pred.get('xgb_home_score', 0),
-                'XGB_원정점수': pred.get('xgb_away_score', 0),
+                'RF_홈승률': f"{float(pred.get('rf_home_win_prob', 0))*100:.1f}%",
+                'RF_원정승률': f"{float(pred.get('rf_away_win_prob', 0))*100:.1f}%",
+                'RF_홈점수': int(pred.get('rf_home_score', 0)),
+                'RF_원정점수': int(pred.get('rf_away_score', 0)),
+                'XGB_홈승률': f"{float(pred.get('xgb_home_win_prob', 0))*100:.1f}%",
+                'XGB_원정승률': f"{float(pred.get('xgb_away_win_prob', 0))*100:.1f}%",
+                'XGB_홈점수': int(pred.get('xgb_home_score', 0)),
+                'XGB_원정점수': int(pred.get('xgb_away_score', 0)),
                 '예측모드': pred.get('mode', ''),
-                '데이터수': pred.get('data_count', 0)
+                '데이터수': int(pred.get('data_count', 0))
             }
             
             # 실제 결과가 있으면 추가
             if pred.get('actual_result'):
                 actual = pred['actual_result']
                 row.update({
-                    '실제_홈점수': actual.get('home_score', ''),
-                    '실제_원정점수': actual.get('away_score', ''),
+                    '실제_홈점수': int(actual.get('home_score', 0)),
+                    '실제_원정점수': int(actual.get('away_score', 0)),
                     '실제_승자': actual.get('winner', ''),
                     '승패예측정확도': '적중' if pred.get('accuracy', {}).get('win_correct') else '실패'
                 })
@@ -132,24 +149,24 @@ def save_predictions_to_excel(predictions, filename=None):
                 '홈팀': pred.get('home_team', ''),
                 '원정선발': pred.get('away_pitcher', ''),
                 '홈선발': pred.get('home_pitcher', ''),
-                'RF_홈승률': f"{pred.get('rf_home_win_prob', 0)*100:.1f}%",
-                'RF_원정승률': f"{pred.get('rf_away_win_prob', 0)*100:.1f}%",
-                'RF_홈점수': pred.get('rf_home_score', 0),
-                'RF_원정점수': pred.get('rf_away_score', 0),
-                'XGB_홈승률': f"{pred.get('xgb_home_win_prob', 0)*100:.1f}%",
-                'XGB_원정승률': f"{pred.get('xgb_away_win_prob', 0)*100:.1f}%",
-                'XGB_홈점수': pred.get('xgb_home_score', 0),
-                'XGB_원정점수': pred.get('xgb_away_score', 0),
+                'RF_홈승률': f"{float(pred.get('rf_home_win_prob', 0))*100:.1f}%",
+                'RF_원정승률': f"{float(pred.get('rf_away_win_prob', 0))*100:.1f}%",
+                'RF_홈점수': int(pred.get('rf_home_score', 0)),
+                'RF_원정점수': int(pred.get('rf_away_score', 0)),
+                'XGB_홈승률': f"{float(pred.get('xgb_home_win_prob', 0))*100:.1f}%",
+                'XGB_원정승률': f"{float(pred.get('xgb_away_win_prob', 0))*100:.1f}%",
+                'XGB_홈점수': int(pred.get('xgb_home_score', 0)),
+                'XGB_원정점수': int(pred.get('xgb_away_score', 0)),
                 '예측모드': pred.get('mode', ''),
-                '데이터수': pred.get('data_count', 0)
+                '데이터수': int(pred.get('data_count', 0))
             }
             
             # 실제 결과가 있으면 추가
             if pred.get('actual_result'):
                 actual = pred['actual_result']
                 row.update({
-                    '실제_홈점수': actual.get('home_score', ''),
-                    '실제_원정점수': actual.get('away_score', ''),
+                    '실제_홈점수': int(actual.get('home_score', 0)),
+                    '실제_원정점수': int(actual.get('away_score', 0)),
                     '실제_승자': actual.get('winner', ''),
                     '승패예측정확도': '적중' if pred.get('accuracy', {}).get('win_correct') else '실패'
                 })
@@ -203,8 +220,8 @@ def create_prediction_report(predictions, filename=None):
                 f.write(f"\n{i}. {pred['away_team']} @ {pred['home_team']}\n")
                 f.write(f"   경기시간: {pred.get('game_time_kst', '시간 미정')}\n")
                 f.write(f"   선발투수: {pred.get('away_pitcher', '미정')} vs {pred.get('home_pitcher', '미정')}\n")
-                f.write(f"   RF 예측: {pred['rf_away_score']}-{pred['rf_home_score']} (홈승률: {pred['rf_home_win_prob']*100:.1f}%)\n")
-                f.write(f"   XGB 예측: {pred['xgb_away_score']}-{pred['xgb_home_score']} (홈승률: {pred['xgb_home_win_prob']*100:.1f}%)\n")
+                f.write(f"   RF 예측: {pred['rf_away_score']}-{pred['rf_home_score']} (홈승률: {float(pred['rf_home_win_prob'])*100:.1f}%)\n")
+                f.write(f"   XGB 예측: {pred['xgb_away_score']}-{pred['xgb_home_score']} (홈승률: {float(pred['xgb_home_win_prob'])*100:.1f}%)\n")
                 
                 if pred.get('actual_result'):
                     actual = pred['actual_result']
