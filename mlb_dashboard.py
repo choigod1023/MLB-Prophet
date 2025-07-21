@@ -728,10 +728,19 @@ def make_prediction():
         
         # 실제 예측 실행
         predictions = capture_prediction_results(df_historical, df_today, fast_mode)
+        print('DEBUG: predictions 구조:', predictions)
+        for i, pred in enumerate(predictions):
+            print(f"DEBUG: predictions[{i}] 타입:", {k: type(v) for k, v in pred.items()})
         predictions = convert_np(predictions)
+        print('DEBUG: predictions(converted) 구조:', predictions)
+        for i, pred in enumerate(predictions):
+            print(f"DEBUG: predictions(converted)[{i}] 타입:", {k: type(v) for k, v in pred.items()})
         # 예측 결과를 파일에 저장
         predictions_history = load_predictions_history()
         predictions_history.extend(predictions)
+        print('DEBUG: predictions_history 구조:', predictions_history)
+        for i, pred in enumerate(predictions_history):
+            print(f"DEBUG: predictions_history[{i}] 타입:", {k: type(v) for k, v in pred.items()})
         save_predictions_history(predictions_history)
         
         current_predictions = predictions
