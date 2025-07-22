@@ -750,13 +750,14 @@ def make_prediction():
         betting_analysis = analyze_betting_opportunities(predictions)
         betting_analysis = convert_np(betting_analysis)
         
-        return jsonify({
+        # jsonify에 넘기는 dict 전체에 convert_np() 적용
+        return jsonify(convert_np({
             'success': True,
             'predictions': predictions,
             'betting_analysis': betting_analysis,
             'data_count': len(df_historical),
             'mode': mode
-        })
+        }))
         
     except Exception as e:
         print(f"API 예측 오류: {e}")
