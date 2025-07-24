@@ -762,6 +762,25 @@ def make_prediction():
         betting_analysis = analyze_betting_opportunities(predictions)
         betting_analysis = convert_np(betting_analysis)
         
+        # 반환 데이터 타입 구조 출력
+        def print_types(obj, prefix=''):
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    print_types(v, prefix + f'{k}.')
+            elif isinstance(obj, list):
+                for i, v in enumerate(obj):
+                    print_types(v, prefix + f'[{i}].')
+            else:
+                print(f'{prefix}{type(obj)}')
+        print('==== 반환 데이터 타입 구조 ====')
+        print_types({
+            'success': True,
+            'predictions': predictions,
+            'betting_analysis': betting_analysis,
+            'data_count': len(df_historical),
+            'mode': mode
+        })
+        print('===========================')
         # jsonify에 넘기는 dict 전체에 convert_np() 적용
         return jsonify(convert_np({
             'success': True,
