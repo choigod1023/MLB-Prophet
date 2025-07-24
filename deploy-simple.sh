@@ -19,7 +19,7 @@ fi
 
 # 3. 도커 이미지 빌드
 echo "🐳 도커 이미지 빌드 중..."
-$DOCKER_CMD build -t mlb-backend .
+$DOCKER_CMD build --no-cache -t mlb-backend .
 
 # 4. 기존 컨테이너 중지 및 제거
 echo "🛑 기존 컨테이너 정리 중..."
