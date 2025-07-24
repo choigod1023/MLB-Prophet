@@ -264,6 +264,7 @@ def calculate_prediction_accuracy(prediction, actual_result):
 
 def convert_np(obj):
     import numpy as np
+    import pandas as pd
     if isinstance(obj, dict):
         return {k: convert_np(v) for k, v in obj.items()}
     elif isinstance(obj, list):
@@ -278,8 +279,19 @@ def convert_np(obj):
         return bool(obj)
     elif hasattr(obj, 'item'):
         return obj.item()
-    else:
-        return obj
+    # pandas 타입 추가
+    elif 'pandas' in str(type(obj)):
+        try:
+            import pandas as pd
+            if isinstance(obj, pd.Timestamp):
+                return obj.isoformat()
+            elif isinstance(obj, pd.DataFrame):
+                return obj.to_dict(orient='records')
+            elif isinstance(obj, pd.Series):
+                return obj.to_dict()
+        except Exception:
+            pass
+    return obj
 
 
 @app.route('/')
