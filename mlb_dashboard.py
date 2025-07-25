@@ -660,32 +660,47 @@ def make_prediction():
                         if score_prediction and len(score_prediction[0]) > 0:
                             pred_result = score_prediction[0][0]
                             print(f"✅ 예측 성공: {pred_result}")
-                            
+                            def to_float(val):
+                                if val is None:
+                                    return None
+                                if isinstance(val, np.ndarray):
+                                    return float(val.item())
+                                if hasattr(val, 'item'):
+                                    return float(val.item())
+                                return float(val)
+                            def to_int(val):
+                                if val is None:
+                                    return None
+                                if isinstance(val, np.ndarray):
+                                    return int(val.item())
+                                if hasattr(val, 'item'):
+                                    return int(val.item())
+                                return int(val)
                             pred = {
                                 'prediction_date': str(prediction_date),
                                 'prediction_time': str(prediction_time),
                                 'home_team': str(row['home_team']),
                                 'away_team': str(row['away_team']),
-                                'home_id': int(home_id) if home_id is not None else None,
-                                'away_id': int(away_id) if away_id is not None else None,
+                                'home_id': to_int(home_id) if home_id is not None else None,
+                                'away_id': to_int(away_id) if away_id is not None else None,
                                 'home_pitcher': str(home_pitcher),
                                 'away_pitcher': str(away_pitcher),
                                 'game_time_kst': str(game_time_kst),
-                                'rf_home_win_prob': float(pred_result['home_win_prob']),
-                                'rf_away_win_prob': float(pred_result['away_win_prob']),
-                                'rf_home_score': int(pred_result['home_score']),
-                                'rf_away_score': int(pred_result['away_score']),
-                                'xgb_home_win_prob': float(pred_result['home_win_prob']),
-                                'xgb_away_win_prob': float(pred_result['away_win_prob']),
-                                'xgb_home_score': int(pred_result['home_score']),
-                                'xgb_away_score': int(pred_result['away_score']),
-                                'score_margin': int(pred_result['score_margin']),
+                                'rf_home_win_prob': to_float(pred_result['home_win_prob']),
+                                'rf_away_win_prob': to_float(pred_result['away_win_prob']),
+                                'rf_home_score': to_int(pred_result['home_score']),
+                                'rf_away_score': to_int(pred_result['away_score']),
+                                'xgb_home_win_prob': to_float(pred_result['home_win_prob']),
+                                'xgb_away_win_prob': to_float(pred_result['away_win_prob']),
+                                'xgb_home_score': to_int(pred_result['home_score']),
+                                'xgb_away_score': to_int(pred_result['away_score']),
+                                'score_margin': to_int(pred_result['score_margin']),
                                 'margin_category': str(pred_result['margin_category']),
                                 'predicted_winner': str(pred_result['predicted_winner']),
-                                'confidence': float(pred_result['confidence']),
+                                'confidence': to_float(pred_result['confidence']),
                                 'game_situation': str(pred_result.get('game_situation', '일반 경기')),
                                 'mode': str(mode),
-                                'data_count': int(len(df_hist)),
+                                'data_count': to_int(len(df_hist)),
                                 'actual_result': None,
                                 'accuracy': None
                             }
@@ -710,6 +725,11 @@ def make_prediction():
                                 'xgb_away_win_prob': float(max(0.05, min(0.95, 1 - xgb_home_win_prob))),
                                 'xgb_home_score': int(max(0, xgb_home_score)),
                                 'xgb_away_score': int(max(0, xgb_away_score)),
+                                'score_margin': None,
+                                'margin_category': None,
+                                'predicted_winner': None,
+                                'confidence': None,
+                                'game_situation': None,
                                 'mode': str(mode),
                                 'data_count': int(len(df_hist)),
                                 'actual_result': None,
@@ -736,6 +756,11 @@ def make_prediction():
                             'xgb_away_win_prob': float(max(0.05, min(0.95, 1 - xgb_home_win_prob))),
                             'xgb_home_score': int(max(0, xgb_home_score)),
                             'xgb_away_score': int(max(0, xgb_away_score)),
+                            'score_margin': None,
+                            'margin_category': None,
+                            'predicted_winner': None,
+                            'confidence': None,
+                            'game_situation': None,
                             'mode': str(mode),
                             'data_count': int(len(df_hist)),
                             'actual_result': None,
