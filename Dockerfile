@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir numpy==1.24.4
 
 # 애플리케이션 파일들 복사
-COPY *.py .
+COPY . .
 COPY *.csv .
 COPY *.json .
 COPY templates/ templates/
