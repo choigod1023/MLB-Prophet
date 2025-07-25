@@ -751,7 +751,7 @@ def make_prediction():
         print('DEBUG: predictions_history 구조:', predictions_history)
         for i, pred in enumerate(predictions_history):
             print(f"DEBUG: predictions_history[{i}] 타입:", {k: type(v) for k, v in pred.items()})
-        save_predictions_history(predictions_history)
+        save_predictions_history(convert_np(predictions_history))
         
         current_predictions = predictions
         
