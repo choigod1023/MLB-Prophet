@@ -659,7 +659,9 @@ def make_prediction():
                         
                         if score_prediction and len(score_prediction[0]) > 0:
                             pred_result = score_prediction[0][0]
-                            print(f"✅ 예측 성공: {pred_result}")
+                            # 예측 성공 로그에 numpy 타입이 남지 않도록 강제 변환
+                            pred_result_clean = convert_np(pred_result)
+                            print(f"✅ 예측 성공: {pred_result_clean}")
                             def to_float(val):
                                 if val is None:
                                     return None

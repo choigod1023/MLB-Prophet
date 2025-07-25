@@ -376,7 +376,7 @@ def compare_rf_xgb_decision_improved(df_historical, df_today, fast=False):
             'xgb_home_score': int(max(0, xgb_home_score)),
             'xgb_away_score': int(max(0, xgb_away_score)),
             'mode': 'fast' if fast else 'full',
-            'data_count': len(df_historical)
+            'data_count': int(len(df_historical))
         }
         predictions.append(pred)
     return predictions
@@ -405,12 +405,12 @@ def analyze_and_report_performance(predictions, actual_results):
     if total_games == 0:
         return None
     return {
-        'total_games': total_games,
-        'win_accuracy': win_correct / total_games,
-        'mean_home_error': total_home_error / total_games,
-        'mean_away_error': total_away_error / total_games,
-        'mean_total_error': total_error / total_games
-    } 
+        'total_games': int(total_games),
+        'win_accuracy': float(win_correct / total_games),
+        'mean_home_error': float(total_home_error / total_games),
+        'mean_away_error': float(total_away_error / total_games),
+        'mean_total_error': float(total_error / total_games)
+    }
 
 def predict_score_with_margin(df_historical, df_today, fast_mode=False):
     """
@@ -418,11 +418,11 @@ def predict_score_with_margin(df_historical, df_today, fast_mode=False):
     """
     import warnings
     warnings.filterwarnings('ignore', category=UserWarning)
-    
+
     from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
     from xgboost import XGBRegressor
     import numpy as np
-    
+
     # 특성 선택 (안정적인 특성만 사용)
     if fast_mode:
         features = [
@@ -434,138 +434,138 @@ def predict_score_with_margin(df_historical, df_today, fast_mode=False):
             'home_pitcher_era', 'home_pitcher_whip', 'home_ops', 'home_avg', 'home_slg', 'home_era', 'home_whip',
             'away_pitcher_era', 'away_pitcher_whip', 'away_ops', 'away_avg', 'away_slg', 'away_era', 'away_whip'
         ]
-    
+
     # 데이터 검증
     if not validate_prediction_data(df_historical, df_today, features):
         return None, "데이터 검증 실패"
-    
+
     # 데이터 전처리
     df_selected = df_historical[features + ['home_score', 'away_score', 'home_win']].copy()
-    
+
     # NaN 값 처리
     df_selected[features] = df_selected[features].fillna(df_selected[features].mean())
     df_selected[features] = df_selected[features].replace([np.inf, -np.inf], np.nan)
     df_selected[features] = df_selected[features].fillna(df_selected[features].mean())
     df_selected[features] = df_selected[features].fillna(0)
-    
+
     # 최종적으로 NaN이 있는 행 제거
     df_selected = df_selected.dropna()
-    
+
     if len(df_selected) < 50:
         return None, "데이터가 부족합니다 (50개 미만)"
-    
+
     # 점수차 계산
     df_selected['score_margin'] = df_selected['home_score'] - df_selected['away_score']
-    
+
     # 특성 스케일링
     from sklearn.preprocessing import StandardScaler
     scaler = StandardScaler()
     X = df_selected[features]
     X_scaled = scaler.fit_transform(X)
-    
+
     # 모델 학습
     np.random.seed(42)
-    
+
     # 1. 홈팀 점수 예측
     home_score_model = XGBRegressor(
-        n_estimators=200, 
-        max_depth=8, 
+        n_estimators=200,
+        max_depth=8,
         learning_rate=0.1,
         random_state=42,
         subsample=0.8,
         colsample_bytree=0.8
     )
     home_score_model.fit(X_scaled, df_selected['home_score'])
-    
+
     # 2. 원정팀 점수 예측
     away_score_model = XGBRegressor(
-        n_estimators=200, 
-        max_depth=8, 
+        n_estimators=200,
+        max_depth=8,
         learning_rate=0.1,
         random_state=42,
         subsample=0.8,
         colsample_bytree=0.8
     )
     away_score_model.fit(X_scaled, df_selected['away_score'])
-    
+
     # 3. 점수차 예측
     margin_model = XGBRegressor(
-        n_estimators=200, 
-        max_depth=8, 
+        n_estimators=200,
+        max_depth=8,
         learning_rate=0.1,
         random_state=42,
         subsample=0.8,
         colsample_bytree=0.8
     )
     margin_model.fit(X_scaled, df_selected['score_margin'])
-    
+
     # 4. 승리 확률 예측
     win_prob_model = XGBRegressor(
-        n_estimators=200, 
-        max_depth=8, 
+        n_estimators=200,
+        max_depth=8,
         learning_rate=0.1,
         random_state=42,
         subsample=0.8,
         colsample_bytree=0.8
     )
     win_prob_model.fit(X_scaled, df_selected['home_win'])
-    
+
     # 예측 실행
     predictions = []
-    
+
     for _, row in df_today.iterrows():
         # 누락된 특성 처리
         missing_features = [f for f in features if pd.isna(row[f])]
         if missing_features:
             print(f"❌ 누락된 특성: {missing_features}")
             continue
-        
+
         # 예측용 데이터 준비
         X_pred = row[features].values.reshape(1, -1)
-        
+
         # NaN 값 처리
         X_pred = np.nan_to_num(X_pred, nan=0.0)
-        
+
         # DataFrame으로 변환하여 feature names 보장
         X_pred_df = pd.DataFrame(X_pred, columns=features)
         X_pred_scaled = scaler.transform(X_pred_df)
-        
+
         # 점수 예측
         try:
             home_score_raw = home_score_model.predict(X_pred_scaled)[0]
             away_score_raw = away_score_model.predict(X_pred_scaled)[0]
             margin_raw = margin_model.predict(X_pred_scaled)[0]
             win_prob_raw = win_prob_model.predict(X_pred_scaled)[0]
-            
+
             # 예측값 검증
             if np.isnan(home_score_raw) or np.isnan(away_score_raw):
                 print(f"❌ 예측값이 NaN입니다: home={home_score_raw}, away={away_score_raw}")
                 continue
-            
+
             # 점수 정수화 및 조정
             home_score = max(0, int(round(home_score_raw)))
             away_score = max(0, int(round(away_score_raw)))
-            
+
             print(f"✅ 예측 완료: {row.get('away_team', 'N/A')} {away_score}-{home_score} {row.get('home_team', 'N/A')}")
-            
+
         except Exception as e:
             print(f"❌ 예측 중 오류: {e}")
             continue
-        
+
         # 점수차 계산
         score_margin = home_score - away_score
-        
+
         # 야구 특성을 반영한 승리 확률 계산
         # 1. 기본 승리 확률 (모델 예측값)
         base_win_prob = win_prob_raw
-        
+
         # 2. 야구 특성 반영: 무승부 방지 및 연장전 고려
         if abs(score_margin) == 0:
             # 점수가 같을 때는 연장전을 고려한 승리 확률 계산
             # 연장전에서는 홈팀이 약간 유리 (홈 어드밴티지)
             import random
             random.seed(42)  # 일관성 보장
-            
+
             # 연장전 승리 확률 (홈팀 55%, 원정팀 45%)
             extra_inning_home_advantage = 0.55
             # 기본 확률과 연장전 확률을 가중 평균
@@ -577,34 +577,34 @@ def predict_score_with_margin(df_historical, df_today, fast_mode=False):
                 win_prob = min(0.95, base_win_prob + margin_factor)
             else:
                 win_prob = max(0.05, base_win_prob - margin_factor)
-        
+
         # 3. 팀 성능 차이 반영
         home_era = row.get('home_era', 4.0)
         away_era = row.get('away_era', 4.0)
         home_ops = row.get('home_ops', 0.7)
         away_ops = row.get('away_ops', 0.7)
-        
+
         # ERA와 OPS 차이에 따른 미세 조정
         era_diff = away_era - home_era  # 홈팀 ERA가 낮을수록 유리
         ops_diff = home_ops - away_ops  # 홈팀 OPS가 높을수록 유리
-        
+
         performance_factor = (era_diff * 0.02) + (ops_diff * 0.1)  # 성능 차이 반영
         win_prob = max(0.05, min(0.95, win_prob + performance_factor))
-        
+
         # 4. 야구 특성 추가 고려사항
         # - 홈 어드밴티지 (약간의 추가 확률)
         home_advantage = 0.02
         win_prob = min(0.95, win_prob + home_advantage)
-        
+
         # 5. 경기 상황별 예측
         game_situation = "연장전 가능성" if abs(score_margin) <= 1 else "일반 경기"
-        
+
         # 베팅 관련 정보
         margin_category = "대승" if abs(score_margin) >= 5 else "소승" if abs(score_margin) >= 2 else "접전"
-        
+
         # 신뢰도 계산 개선
         confidence = abs(win_prob - 0.5) * 2  # 0~1 사이의 신뢰도
-        
+
         # 점수 기반 승리 예측 (점수와 일치하도록)
         if home_score > away_score:
             predicted_winner = 'home'
@@ -619,7 +619,7 @@ def predict_score_with_margin(df_historical, df_today, fast_mode=False):
             predicted_winner = 'home' if win_prob > 0.5 else 'away'
             # 동점일 때는 확률 차이를 줄임
             win_prob = max(0.45, min(0.55, win_prob))
-        
+
         prediction = {
             'home_score': int(home_score),
             'away_score': int(away_score),
@@ -631,36 +631,36 @@ def predict_score_with_margin(df_historical, df_today, fast_mode=False):
             'confidence': float(confidence),
             'game_situation': str(game_situation)
         }
-        
+
         predictions.append(prediction)
-    
-    return predictions, None 
+
+    return predictions, None
 
 def analyze_betting_opportunities(predictions):
     """
     베팅 기회 분석 함수
     """
     betting_opportunities = []
-    
+
     for pred in predictions:
-        confidence = pred.get('confidence', 0)
-        margin_category = pred.get('margin_category', '접전')
-        home_win_prob = pred.get('home_win_prob', 0.5)
-        
+        confidence = float(pred.get('confidence', 0))
+        margin_category = str(pred.get('margin_category', '접전'))
+        home_win_prob = float(pred.get('home_win_prob', 0.5))
+
         # 베팅 기회 판단 기준
         betting_score = 0
         betting_reason = []
-        
+
         # 1. 높은 신뢰도 (70% 이상)
         if confidence >= 0.7:
             betting_score += 30
             betting_reason.append(f"높은 신뢰도 ({confidence:.1%})")
-        
+
         # 2. 명확한 승리 예측 (60% 이상)
         if home_win_prob >= 0.6 or home_win_prob <= 0.4:
             betting_score += 25
             betting_reason.append(f"명확한 승리 예측 ({home_win_prob:.1%})")
-        
+
         # 3. 점수차 분석
         if margin_category == "대승":
             betting_score += 20
@@ -668,18 +668,18 @@ def analyze_betting_opportunities(predictions):
         elif margin_category == "소승":
             betting_score += 15
             betting_reason.append("소승 예측")
-        
+
         # 4. 야구 특성 분석
-        game_situation = pred.get('game_situation', '일반 경기')
+        game_situation = str(pred.get('game_situation', '일반 경기'))
         if game_situation == "연장전 가능성":
             betting_score += 10
             betting_reason.append("연장전 가능성")
-        
+
         # 5. 홈 어드밴티지 고려
         if pred.get('predicted_winner') == 'home' and home_win_prob > 0.55:
             betting_score += 5
             betting_reason.append("홈 어드밴티지")
-        
+
         # 6. 베팅 추천 등급
         if betting_score >= 60:
             recommendation = "강력 추천"
@@ -689,43 +689,43 @@ def analyze_betting_opportunities(predictions):
             recommendation = "관심"
         else:
             recommendation = "관망"
-        
+
         betting_opportunities.append({
             'game': f"{pred['away_team']} @ {pred['home_team']}",
-            'predicted_winner': pred.get('predicted_winner', 'unknown'),
+            'predicted_winner': str(pred.get('predicted_winner', 'unknown')),
             'home_win_prob': home_win_prob,
             'confidence': confidence,
             'margin_category': margin_category,
             'betting_score': betting_score,
-            'betting_reason': betting_reason,
-            'recommendation': recommendation
+            'betting_reason': [str(r) for r in betting_reason],
+            'recommendation': str(recommendation)
         })
-    
-    return betting_opportunities 
+
+    return betting_opportunities
 
 def validate_prediction_data(df_historical, df_today, features):
     """
     예측 데이터 검증 함수
     """
     print("=== 데이터 검증 시작 ===")
-    
+
     # 1. 과거 데이터 검증
     print(f"과거 데이터 크기: {len(df_historical)}")
     print(f"필요한 특성: {features}")
-    
+
     # 누락된 특성 확인
     missing_features = [f for f in features if f not in df_historical.columns]
     if missing_features:
         print(f"❌ 누락된 특성: {missing_features}")
         return False
-    
+
     # NaN 값 확인
     nan_counts = df_historical[features].isna().sum()
     print(f"NaN 값 개수:\n{nan_counts}")
-    
+
     # 2. 오늘 데이터 검증
     print(f"\n오늘 데이터 크기: {len(df_today)}")
-    
+
     for idx, row in df_today.iterrows():
         print(f"\n경기 {idx+1}: {row.get('away_team', 'N/A')} @ {row.get('home_team', 'N/A')}")
         for feature in features:
@@ -734,14 +734,14 @@ def validate_prediction_data(df_historical, df_today, features):
                 print(f"  ❌ {feature}: NaN")
             else:
                 print(f"  ✅ {feature}: {value}")
-    
+
     # 3. 데이터 품질 확인
     df_clean = df_historical[features + ['home_score', 'away_score', 'home_win']].dropna()
     print(f"\n클린 데이터 크기: {len(df_clean)}")
-    
+
     if len(df_clean) < 50:
         print("❌ 클린 데이터가 부족합니다 (50개 미만)")
         return False
-    
+
     print("✅ 데이터 검증 완료")
     return True 
