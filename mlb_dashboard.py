@@ -662,21 +662,31 @@ def make_prediction():
                             # 예측 성공 로그에 numpy 타입이 남지 않도록 강제 변환
                             pred_result_clean = convert_np(pred_result)
                             print(f"✅ 예측 성공: {pred_result_clean}")
+                            # 더 강력한 float 변환 함수
                             def to_float(val):
+                                import numpy as np
                                 if val is None:
                                     return None
-                                if isinstance(val, np.ndarray):
-                                    return float(val.item())
-                                if hasattr(val, 'item'):
-                                    return float(val.item())
+                                # 반복적으로 item()을 적용
+                                for _ in range(3):
+                                    if isinstance(val, np.ndarray):
+                                        val = val.item()
+                                    if isinstance(val, np.generic):
+                                        val = val.item()
+                                    if hasattr(val, 'item'):
+                                        val = val.item()
                                 return float(val)
                             def to_int(val):
+                                import numpy as np
                                 if val is None:
                                     return None
-                                if isinstance(val, np.ndarray):
-                                    return int(val.item())
-                                if hasattr(val, 'item'):
-                                    return int(val.item())
+                                for _ in range(3):
+                                    if isinstance(val, np.ndarray):
+                                        val = val.item()
+                                    if isinstance(val, np.generic):
+                                        val = val.item()
+                                    if hasattr(val, 'item'):
+                                        val = val.item()
                                 return int(val)
                             pred = {
                                 'prediction_date': str(prediction_date),
@@ -689,7 +699,7 @@ def make_prediction():
                                 'away_pitcher': str(away_pitcher),
                                 'game_time_kst': str(game_time_kst),
                                 'rf_home_win_prob': to_float(pred_result['home_win_prob']),
-                                'rf_away_win_prob': to_float(pred_result['away_win_prob']),
+                                'rf_away_win_prob': to_float(pred_result['rf_away_win_prob']) if 'rf_away_win_prob' in pred_result else to_float(pred_result['away_win_prob']),
                                 'rf_home_score': to_int(pred_result['home_score']),
                                 'rf_away_score': to_int(pred_result['away_score']),
                                 'xgb_home_win_prob': to_float(pred_result['home_win_prob']),
@@ -699,7 +709,7 @@ def make_prediction():
                                 'score_margin': to_int(pred_result['score_margin']),
                                 'margin_category': str(pred_result['margin_category']),
                                 'predicted_winner': str(pred_result['predicted_winner']),
-                                'confidence': to_float(pred_result['confidence']),
+                                'confidence': to_float(to_float(pred_result['confidence'])),
                                 'game_situation': str(pred_result.get('game_situation', '일반 경기')),
                                 'mode': str(mode),
                                 'data_count': to_int(len(df_hist)),
