@@ -621,15 +621,15 @@ def predict_score_with_margin(df_historical, df_today, fast_mode=False):
             win_prob = max(0.45, min(0.55, win_prob))
         
         prediction = {
-            'home_score': home_score,
-            'away_score': away_score,
-            'score_margin': score_margin,
-            'margin_category': margin_category,
-            'home_win_prob': win_prob,
-            'away_win_prob': 1 - win_prob,
-            'predicted_winner': predicted_winner,
-            'confidence': confidence,
-            'game_situation': game_situation
+            'home_score': int(home_score),
+            'away_score': int(away_score),
+            'score_margin': int(score_margin),
+            'margin_category': str(margin_category),
+            'home_win_prob': float(win_prob),
+            'away_win_prob': float(1 - win_prob),
+            'predicted_winner': str(predicted_winner),
+            'confidence': float(confidence),
+            'game_situation': str(game_situation)
         }
         
         predictions.append(prediction)
