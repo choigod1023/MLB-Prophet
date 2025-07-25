@@ -77,10 +77,16 @@ def load_predictions_history():
 
 def save_predictions_history(predictions_data):
     try:
+        # numpy 타입 강제 검사
+        flatten_types(predictions_data)
+        # 두 번 변환(혹시라도 남아있을 경우)
+        safe_data = convert_np(convert_np(predictions_data))
         with open(PREDICTIONS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(convert_np(predictions_data), f, ensure_ascii=False, indent=2)
+            json.dump(safe_data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"예측 기록 저장 오류: {e}")
+        import traceback
+        traceback.print_exc()
 
 def save_predictions_to_csv(predictions, filename=None):
     """예측 결과를 CSV 파일로 저장"""
@@ -265,10 +271,8 @@ def calculate_prediction_accuracy(prediction, actual_result):
 def convert_np(obj):
     import numpy as np
     import pandas as pd
-    if isinstance(obj, dict):
-        return {k: convert_np(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [convert_np(v) for v in obj]
+    if isinstance(obj, np.generic):
+        return obj.item()
     elif isinstance(obj, (np.integer,)):
         return int(obj)
     elif isinstance(obj, (np.floating,)):
@@ -277,21 +281,33 @@ def convert_np(obj):
         return [convert_np(x) for x in obj.tolist()]
     elif isinstance(obj, (np.bool_)):
         return bool(obj)
+    elif isinstance(obj, pd.Timestamp):
+        return obj.isoformat()
+    elif isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient='records')
+    elif isinstance(obj, pd.Series):
+        return obj.to_dict()
+    elif isinstance(obj, dict):
+        return {k: convert_np(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_np(v) for v in obj]
     elif hasattr(obj, 'item'):
         return obj.item()
-    # pandas 타입 추가
-    elif 'pandas' in str(type(obj)):
-        try:
-            import pandas as pd
-            if isinstance(obj, pd.Timestamp):
-                return obj.isoformat()
-            elif isinstance(obj, pd.DataFrame):
-                return obj.to_dict(orient='records')
-            elif isinstance(obj, pd.Series):
-                return obj.to_dict()
-        except Exception:
-            pass
-    return obj
+    else:
+        return obj
+
+# numpy 타입 강제 검사 함수
+def flatten_types(obj, prefix=''):
+    import numpy as np
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            flatten_types(v, prefix + f'{k}.')
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            flatten_types(v, prefix + f'[{i}].')
+    else:
+        if isinstance(obj, np.generic):
+            print(f"FOUND NUMPY TYPE: {prefix}{type(obj)}")
 
 
 @app.route('/')
@@ -751,7 +767,7 @@ def make_prediction():
         print('DEBUG: predictions_history 구조:', predictions_history)
         for i, pred in enumerate(predictions_history):
             print(f"DEBUG: predictions_history[{i}] 타입:", {k: type(v) for k, v in pred.items()})
-        save_predictions_history(convert_np(predictions_history))
+        save_predictions_history(predictions_history)
         
         current_predictions = predictions
         
