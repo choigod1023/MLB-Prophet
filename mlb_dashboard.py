@@ -646,48 +646,46 @@ def make_prediction():
                             print(f"✅ 예측 성공: {pred_result}")
                             
                             pred = {
-                                'prediction_date': prediction_date,
-                                'prediction_time': prediction_time,
+                                'prediction_date': str(prediction_date),
+                                'prediction_time': str(prediction_time),
                                 'home_team': str(row['home_team']),
                                 'away_team': str(row['away_team']),
-                                'home_id': home_id,
-                                'away_id': away_id,
-                                'home_pitcher': home_pitcher,
-                                'away_pitcher': away_pitcher,
-                                'game_time_kst': game_time_kst,
-                                # 새로운 예측 결과를 기존 구조로 매핑
-                                'rf_home_win_prob': pred_result['home_win_prob'],
-                                'rf_away_win_prob': pred_result['away_win_prob'],
-                                'rf_home_score': pred_result['home_score'],
-                                'rf_away_score': pred_result['away_score'],
-                                'xgb_home_win_prob': pred_result['home_win_prob'],
-                                'xgb_away_win_prob': pred_result['away_win_prob'],
-                                'xgb_home_score': pred_result['home_score'],
-                                'xgb_away_score': pred_result['away_score'],
-                                # 추가 정보
-                                'score_margin': pred_result['score_margin'],
-                                'margin_category': pred_result['margin_category'],
-                                'predicted_winner': pred_result['predicted_winner'],
-                                'confidence': pred_result['confidence'],
-                                'game_situation': pred_result.get('game_situation', '일반 경기'),
+                                'home_id': int(home_id) if home_id is not None else None,
+                                'away_id': int(away_id) if away_id is not None else None,
+                                'home_pitcher': str(home_pitcher),
+                                'away_pitcher': str(away_pitcher),
+                                'game_time_kst': str(game_time_kst),
+                                'rf_home_win_prob': float(pred_result['home_win_prob']),
+                                'rf_away_win_prob': float(pred_result['away_win_prob']),
+                                'rf_home_score': int(pred_result['home_score']),
+                                'rf_away_score': int(pred_result['away_score']),
+                                'xgb_home_win_prob': float(pred_result['home_win_prob']),
+                                'xgb_away_win_prob': float(pred_result['away_win_prob']),
+                                'xgb_home_score': int(pred_result['home_score']),
+                                'xgb_away_score': int(pred_result['away_score']),
+                                'score_margin': int(pred_result['score_margin']),
+                                'margin_category': str(pred_result['margin_category']),
+                                'predicted_winner': str(pred_result['predicted_winner']),
+                                'confidence': float(pred_result['confidence']),
+                                'game_situation': str(pred_result.get('game_situation', '일반 경기')),
                                 'mode': str(mode),
-                                'data_count': len(df_hist),
-                                'actual_result': None,  # 나중에 업데이트
-                                'accuracy': None  # 나중에 업데이트
+                                'data_count': int(len(df_hist)),
+                                'actual_result': None,
+                                'accuracy': None
                             }
                         else:
                             print(f"❌ 예측 실패: {score_prediction}")
                             # 기존 방식으로 폴백
                             pred = {
-                                'prediction_date': prediction_date,
-                                'prediction_time': prediction_time,
+                                'prediction_date': str(prediction_date),
+                                'prediction_time': str(prediction_time),
                                 'home_team': str(row['home_team']),
                                 'away_team': str(row['away_team']),
-                                'home_id': home_id,
-                                'away_id': away_id,
-                                'home_pitcher': home_pitcher,
-                                'away_pitcher': away_pitcher,
-                                'game_time_kst': game_time_kst,
+                                'home_id': int(home_id) if home_id is not None else None,
+                                'away_id': int(away_id) if away_id is not None else None,
+                                'home_pitcher': str(home_pitcher),
+                                'away_pitcher': str(away_pitcher),
+                                'game_time_kst': str(game_time_kst),
                                 'rf_home_win_prob': float(max(0.05, min(0.95, rf_home_win_prob))),
                                 'rf_away_win_prob': float(max(0.05, min(0.95, 1 - rf_home_win_prob))),
                                 'rf_home_score': int(max(0, rf_home_score)),
@@ -697,23 +695,23 @@ def make_prediction():
                                 'xgb_home_score': int(max(0, xgb_home_score)),
                                 'xgb_away_score': int(max(0, xgb_away_score)),
                                 'mode': str(mode),
-                                'data_count': len(df_hist),
-                                'actual_result': None,  # 나중에 업데이트
-                                'accuracy': None  # 나중에 업데이트
+                                'data_count': int(len(df_hist)),
+                                'actual_result': None,
+                                'accuracy': None
                             }
                     except Exception as e:
                         print(f"개선된 예측 실패, 기존 방식 사용: {e}")
                         # 기존 방식으로 폴백
                         pred = {
-                            'prediction_date': prediction_date,
-                            'prediction_time': prediction_time,
+                            'prediction_date': str(prediction_date),
+                            'prediction_time': str(prediction_time),
                             'home_team': str(row['home_team']),
                             'away_team': str(row['away_team']),
-                            'home_id': home_id,
-                            'away_id': away_id,
-                            'home_pitcher': home_pitcher,
-                            'away_pitcher': away_pitcher,
-                            'game_time_kst': game_time_kst,
+                            'home_id': int(home_id) if home_id is not None else None,
+                            'away_id': int(away_id) if away_id is not None else None,
+                            'home_pitcher': str(home_pitcher),
+                            'away_pitcher': str(away_pitcher),
+                            'game_time_kst': str(game_time_kst),
                             'rf_home_win_prob': float(max(0.05, min(0.95, rf_home_win_prob))),
                             'rf_away_win_prob': float(max(0.05, min(0.95, 1 - rf_home_win_prob))),
                             'rf_home_score': int(max(0, rf_home_score)),
@@ -723,9 +721,9 @@ def make_prediction():
                             'xgb_home_score': int(max(0, xgb_home_score)),
                             'xgb_away_score': int(max(0, xgb_away_score)),
                             'mode': str(mode),
-                            'data_count': len(df_hist),
-                            'actual_result': None,  # 나중에 업데이트
-                            'accuracy': None  # 나중에 업데이트
+                            'data_count': int(len(df_hist)),
+                            'actual_result': None,
+                            'accuracy': None
                         }
                     predictions.append(pred)
                 
