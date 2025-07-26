@@ -51,8 +51,8 @@ else:
     app.json_encoder = NumpyEncoder
 # === 커스텀 인코더/Provider 끝 ===
 
-# 디버그 모드 활성화
-app.debug = True
+# 디버그 모드 활성화 (개발 환경에서만)
+app.debug = os.environ.get('FLASK_ENV') == 'development'
 
 # 전역 변수로 예측 결과 저장
 current_predictions = []
@@ -1097,4 +1097,7 @@ if __name__ == '__main__':
     print("🌐 MLB 예측 대시보드 시작 중...")
     print("📱 브라우저에서 http://localhost:5000 으로 접속하세요")
     print("🧑‍💻 Swagger UI: http://localhost:5000/apidocs")
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    
+    # 환경에 따라 실행 모드 결정
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000) 

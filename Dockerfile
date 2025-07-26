@@ -15,12 +15,14 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt . 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir numpy==1.24.4
+RUN pip install --no-cache-dir gunicorn==21.2.0
 
 # 애플리케이션 파일들 복사
 COPY . .
 COPY *.csv .
 COPY *.json .
 COPY templates/ templates/
+COPY gunicorn.conf.py .
 
 # 포트 5000 노출
 EXPOSE 5000
@@ -29,5 +31,5 @@ EXPOSE 5000
 ENV FLASK_APP=mlb_dashboard.py
 ENV FLASK_ENV=production
 
-# 애플리케이션 실행 (로그 파일로 출력)
-CMD ["sh", "-c", "python mlb_dashboard.py > output.log 2>&1"] 
+# 애플리케이션 실행 (프로덕션용 gunicorn 사용)
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "mlb_dashboard:app"] 

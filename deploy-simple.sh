@@ -17,6 +17,10 @@ else
     COMPOSE_CMD="docker-compose"
 fi
 
+# 2-1. Docker 캐시/이미지/볼륨 정리
+echo "🧹 Docker 캐시/이미지/볼륨 정리 중..."
+$DOCKER_CMD system prune -a --volumes -f
+
 # 3. 도커 이미지 빌드
 echo "🐳 도커 이미지 빌드 중..."
 $DOCKER_CMD build --no-cache -t mlb-backend .
