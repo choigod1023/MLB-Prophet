@@ -1,5 +1,3 @@
-version: "3.3"
-
 services:
   nginx-proxy:
     image: nginx:alpine
@@ -39,6 +37,36 @@ services:
     networks:
       - mlb-network
 
+  # 웹 서비스 (예시)
+  web-service:
+    image: nginx:alpine # 예시로 nginx 사용, 실제로는 웹 앱 이미지
+    container_name: web-service
+    expose:
+      - "3000"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      - web-network
+
+  # API 서비스 (예시)
+  api-service:
+    image: python:3.9-slim # 예시로 python 사용, 실제로는 API 앱 이미지
+    container_name: api-service
+    expose:
+      - "8000"
+    volumes:
+      - ./api:/app
+    working_dir: /app
+    command: python -m http.server 8000 # 예시 명령어
+    restart: unless-stopped
+    networks:
+      - api-network
+
 networks:
   mlb-network:
+    driver: bridge
+  web-network:
+    driver: bridge
+  api-network:
     driver: bridge
