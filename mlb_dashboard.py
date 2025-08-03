@@ -499,7 +499,19 @@ def make_prediction():
             if not csv_file:
                 # 기본 CSV 파일 자동 선택 (가장 최근 수정된 mlb*.csv)
                 import glob
-                csv_candidates = glob.glob('mlb*.csv')
+                # 도커 환경을 고려한 여러 경로에서 CSV 파일 검색
+                search_paths = ['.', '/app', '/app/data', './data']
+                csv_candidates = []
+                
+                for search_path in search_paths:
+                    try:
+                        if os.path.exists(search_path):
+                            pattern = os.path.join(search_path, 'mlb*.csv')
+                            csv_candidates.extend(glob.glob(pattern))
+                    except Exception as e:
+                        print(f"경로 {search_path} 검색 중 오류: {e}")
+                        continue
+                
                 if csv_candidates:
                     csv_file = max(csv_candidates, key=os.path.getmtime)
                 else:
@@ -989,20 +1001,43 @@ def get_csv_files():
         description: CSV 파일 목록 반환
     """
     try:
+        # 도커 환경을 고려한 여러 경로에서 CSV 파일 검색
+        search_paths = ['.', '/app', '/app/data', './data']
         csv_files = []
-        for file in os.listdir('.'):
-            if file.endswith('.csv') and 'mlb' in file.lower():
-                file_size = os.path.getsize(file) / 1024  # KB
-                mod_time = datetime.fromtimestamp(os.path.getmtime(file))
-                csv_files.append({
-                    'name': file,
+        
+        for search_path in search_paths:
+            try:
+                if os.path.exists(search_path):
+                    files = os.listdir(search_path)
+                    for file in files:
+                        if file.endswith('.csv') and 'mlb' in file.lower():
+                            file_path = os.path.join(search_path, file)
+                            csv_files.append(file_path)
+            except Exception as e:
+                print(f"경로 {search_path} 검색 중 오류: {e}")
+                continue
+        
+        # 중복 제거
+        csv_files = list(set(csv_files))
+        
+        result = []
+        for file_path in csv_files:
+            try:
+                file_size = os.path.getsize(file_path) / 1024  # KB
+                mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+                result.append({
+                    'name': os.path.basename(file_path),
+                    'path': file_path,
                     'size': f"{file_size:.1f}KB",
                     'modified': mod_time.strftime('%Y-%m-%d %H:%M')
                 })
+            except Exception as e:
+                print(f"파일 정보 읽기 오류 {file_path}: {e}")
+                continue
         
         return jsonify({
             'success': True,
-            'files': csv_files
+            'files': result
         })
     except Exception as e:
         print(f"CSV 파일 목록 API 오류: {e}")
@@ -1089,6 +1124,53 @@ def download_file(filename):
     except Exception as e:
         print(f"파일 다운로드 오류: {e}")
         return jsonify({'success': False, 'error': f'다운로드 오류: {str(e)}'})
+
+@app.route('/api/debug/filesystem')
+def debug_filesystem():
+    """
+    파일 시스템 디버깅 API
+    ---
+    responses:
+      200:
+        description: 파일 시스템 정보 반환
+    """
+    try:
+        import os
+        import glob
+        
+        debug_info = {
+            'current_directory': os.getcwd(),
+            'directory_contents': {},
+            'csv_files_found': [],
+            'search_paths': ['.', '/app', '/app/data', './data']
+        }
+        
+        # 각 검색 경로의 내용 확인
+        for search_path in debug_info['search_paths']:
+            try:
+                if os.path.exists(search_path):
+                    files = os.listdir(search_path)
+                    debug_info['directory_contents'][search_path] = files
+                    
+                    # CSV 파일 찾기
+                    csv_files = [f for f in files if f.endswith('.csv') and 'mlb' in f.lower()]
+                    if csv_files:
+                        debug_info['csv_files_found'].extend([os.path.join(search_path, f) for f in csv_files])
+                else:
+                    debug_info['directory_contents'][search_path] = "PATH_NOT_EXISTS"
+            except Exception as e:
+                debug_info['directory_contents'][search_path] = f"ERROR: {str(e)}"
+        
+        # 중복 제거
+        debug_info['csv_files_found'] = list(set(debug_info['csv_files_found']))
+        
+        return jsonify({
+            'success': True,
+            'debug_info': debug_info
+        })
+    except Exception as e:
+        print(f"파일 시스템 디버깅 API 오류: {e}")
+        return jsonify({'success': False, 'error': f'디버깅 오류: {str(e)}'})
 
 if __name__ == '__main__':
     # templates 폴더 생성

@@ -239,16 +239,40 @@ def get_recent_data(days=30):
 # === CSV/파일 유틸 ===
 def list_available_csv_files():
     """사용 가능한 CSV 파일 목록 반환 (list of dict)"""
-    csv_files = [f for f in os.listdir('.') if f.endswith('.csv') and 'mlb' in f.lower()]
+    # 도커 환경을 고려한 여러 경로에서 CSV 파일 검색
+    search_paths = ['.', '/app', '/app/data', './data']
+    csv_files = []
+    
+    for search_path in search_paths:
+        try:
+            if os.path.exists(search_path):
+                files = os.listdir(search_path)
+                for file in files:
+                    if file.endswith('.csv') and 'mlb' in file.lower():
+                        file_path = os.path.join(search_path, file)
+                        csv_files.append(file_path)
+        except Exception as e:
+            print(f"경로 {search_path} 검색 중 오류: {e}")
+            continue
+    
+    # 중복 제거
+    csv_files = list(set(csv_files))
+    
     result = []
-    for file in csv_files:
-        file_size = os.path.getsize(file) / 1024  # KB
-        mod_time = datetime.fromtimestamp(os.path.getmtime(file))
-        result.append({
-            'name': file,
-            'size': f"{file_size:.1f}KB",
-            'modified': mod_time.strftime('%Y-%m-%d %H:%M')
-        })
+    for file_path in csv_files:
+        try:
+            file_size = os.path.getsize(file_path) / 1024  # KB
+            mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+            result.append({
+                'name': os.path.basename(file_path),
+                'path': file_path,
+                'size': f"{file_size:.1f}KB",
+                'modified': mod_time.strftime('%Y-%m-%d %H:%M')
+            })
+        except Exception as e:
+            print(f"파일 정보 읽기 오류 {file_path}: {e}")
+            continue
+    
     return result
 
 def load_csv_data(filename=None):
