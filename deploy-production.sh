@@ -79,9 +79,41 @@ export PYTHONUNBUFFERED=1
 print_status "프로덕션 도커 이미지 빌드 중..."
 $DOCKER_CMD build --no-cache -t mlb-backend:production .
 
+# 6-1. 현재 컨테이너 상태 확인
+print_status "현재 컨테이너 상태 확인 중..."
+$COMPOSE_CMD ps
+echo ""
+
+# 기존 컨테이너가 실행 중인지 확인
+if $COMPOSE_CMD ps | grep -q "mlb-backend"; then
+    print_warning "기존 컨테이너가 실행 중입니다. 정리 후 재시작합니다."
+    read -p "계속하시겠습니까? (y/n): " continue_deploy
+    if [ "$continue_deploy" != "y" ]; then
+        print_error "배포가 취소되었습니다."
+        exit 1
+    fi
+fi
+
 # 7. 기존 컨테이너 중지 및 제거
 print_status "기존 컨테이너 정리 중..."
+
+# 모든 컨테이너 중지
 $COMPOSE_CMD down
+
+# 강제로 컨테이너 제거 (이름 충돌 해결)
+print_status "기존 컨테이너 강제 제거 중..."
+$DOCKER_CMD rm -f mlb-backend 2>/dev/null || true
+$DOCKER_CMD rm -f mlb-nginx 2>/dev/null || true
+
+# 모든 중지된 컨테이너 제거
+$DOCKER_CMD container prune -f
+
+# 네트워크 정리 (선택사항)
+read -p "네트워크도 정리하시겠습니까? (y/n): " clean_network
+if [ "$clean_network" = "y" ]; then
+    print_status "네트워크 정리 중..."
+    $DOCKER_CMD network prune -f
+fi
 
 # 8. 새 컨테이너 시작
 print_status "프로덕션 컨테이너 시작 중..."
