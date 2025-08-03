@@ -20,14 +20,19 @@ RUN pip install --no-cache-dir gunicorn==21.2.0
 
 # 필수 파일들을 개별적으로 복사
 COPY mlb_dashboard.py ./
-COPY mlb_utils.py ./
-COPY gunicorn.conf.py ./
-COPY __init__.py ./
-COPY templates/ ./templates/
+RUN echo "mlb_dashboard.py 복사 완료" && ls -la /app/mlb_dashboard.py
 
-# CSV 및 JSON 파일들 복사
-COPY *.csv ./ 2>/dev/null || echo "No CSV files found"
-COPY *.json ./ 2>/dev/null || echo "No JSON files found"
+COPY mlb_utils.py ./
+RUN echo "mlb_utils.py 복사 완료" && ls -la /app/mlb_utils.py
+
+COPY gunicorn.conf.py ./
+RUN echo "gunicorn.conf.py 복사 완료" && ls -la /app/gunicorn.conf.py
+
+COPY __init__.py ./
+RUN echo "__init__.py 복사 완료" && ls -la /app/__init__.py
+
+COPY templates/ ./templates/
+RUN echo "templates/ 복사 완료" && ls -la /app/templates/
 
 # 파일 존재 확인
 RUN echo "=== 복사 후 파일 목록 확인 ===" && ls -la /app/
