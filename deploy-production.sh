@@ -42,25 +42,25 @@ else
     COMPOSE_CMD="docker-compose"
 fi
 
-# 3. 프론트엔드 빌드 (선택사항)
-print_status "프론트엔드 빌드 확인 중..."
-if [ -d "mlb-frontend" ]; then
-    print_status "프론트엔드 빌드 중..."
-    cd mlb-frontend
+# # 3. 프론트엔드 빌드 (선택사항)
+# print_status "프론트엔드 빌드 확인 중..."
+# if [ -d "mlb-frontend" ]; then
+#     print_status "프론트엔드 빌드 중..."
+#     cd mlb-frontend
     
-    # TypeScript가 설치되어 있는지 확인
-    if ! command -v tsc &> /dev/null; then
-        print_warning "TypeScript가 설치되지 않았습니다. npm으로 설치 중..."
-        npm install -g typescript
-    fi
+#     # TypeScript가 설치되어 있는지 확인
+#     if ! command -v tsc &> /dev/null; then
+#         print_warning "TypeScript가 설치되지 않았습니다. npm으로 설치 중..."
+#         npm install -g typescript
+#     fi
     
-    # 빌드 실행
-    npm run build
-    cd ..
-    print_success "프론트엔드 빌드 완료"
-else
-    print_warning "프론트엔드 디렉토리가 없습니다. 백엔드만 배포합니다."
-fi
+#     # 빌드 실행
+#     npm run build
+#     cd ..
+#     print_success "프론트엔드 빌드 완료"
+# else
+#     print_warning "프론트엔드 디렉토리가 없습니다. 백엔드만 배포합니다."
+# fi
 
 # 4. Docker 캐시/이미지/볼륨 정리 (선택사항)
 read -p "Docker 캐시를 정리하시겠습니까? (y/n): " clean_cache
