@@ -18,14 +18,20 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir numpy==1.24.4
 RUN pip install --no-cache-dir gunicorn==21.2.0
 
-# 애플리케이션 파일들 복사
-COPY . .
+# 애플리케이션 파일들 복사 (순서 중요)
+COPY mlb_dashboard.py .
+COPY mlb_utils.py .
+COPY gunicorn.conf.py .
+COPY test_module.py .
+COPY templates/ templates/
+COPY *.csv . 2>/dev/null || echo "No CSV files to copy"
+COPY *.json . 2>/dev/null || echo "No JSON files to copy"
 
-# CSV 파일들이 있는지 확인하고 복사 (선택적)
-RUN if ls *.csv 1> /dev/null 2>&1; then echo "CSV files found and copied"; else echo "No CSV files found during build"; fi
+# 파일 존재 확인
+RUN ls -la /app/
 
-# JSON 파일들 복사 (선택적)
-RUN if ls *.json 1> /dev/null 2>&1; then echo "JSON files found and copied"; else echo "No JSON files found during build"; fi
+# 모듈 테스트 실행
+RUN python test_module.py
 
 # 포트 5000 노출
 EXPOSE 5000
@@ -33,6 +39,7 @@ EXPOSE 5000
 # 환경 변수 설정
 ENV FLASK_APP=mlb_dashboard.py
 ENV FLASK_ENV=production
+ENV PYTHONPATH=/app
 
 # 애플리케이션 실행 (프로덕션용 gunicorn 사용)
 CMD ["gunicorn", "-c", "gunicorn.conf.py", "mlb_dashboard:app"] 

@@ -1,6 +1,10 @@
 # Gunicorn 설정 파일
 import multiprocessing
 import os
+import sys
+
+# Python 경로 설정
+sys.path.insert(0, '/app')
 
 # 바인딩할 주소와 포트
 bind = "0.0.0.0:5000"
@@ -34,10 +38,14 @@ graceful_timeout = 30
 raw_env = [
     "FLASK_APP=mlb_dashboard.py",
     "FLASK_ENV=production",
-    "PYTHONUNBUFFERED=1"
+    "PYTHONUNBUFFERED=1",
+    "PYTHONPATH=/app"
 ]
 
 # 보안 설정
 limit_request_line = 4094
 limit_request_fields = 100
-limit_request_field_size = 8190 
+limit_request_field_size = 8190
+
+# 디버깅을 위한 설정
+preload_app = False 

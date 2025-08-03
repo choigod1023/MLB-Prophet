@@ -136,6 +136,14 @@ fi
 print_status "최근 로그 확인 중..."
 $COMPOSE_CMD logs --tail=20 mlb-backend
 
+# 12. 디버깅 옵션
+echo ""
+print_status "디버깅 옵션:"
+echo "🔍 컨테이너 내부 접속: $DOCKER_CMD exec -it mlb-backend bash"
+echo "📄 모듈 테스트: $DOCKER_CMD exec -it mlb-backend python test_module.py"
+echo "📁 파일 목록 확인: $DOCKER_CMD exec -it mlb-backend ls -la"
+echo "🐍 Python 경로 확인: $DOCKER_CMD exec -it mlb-backend python -c 'import sys; print(sys.path)'"
+
 echo ""
 echo "🌐 프로덕션 서버가 http://localhost:5000 에서 실행 중입니다."
 echo ""
