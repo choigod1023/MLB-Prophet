@@ -1,15 +1,6 @@
 from flask import Flask, render_template, jsonify, request, send_file
 import os
-from mlb_utils import (
-    get_today_boxscore_era_with_stats,
-    get_recent_data,
-    compare_rf_xgb_decision_improved,
-    analyze_and_report_performance,
-    load_csv_data,
-    list_available_csv_files,
-    check_and_update_csv_data,
-    get_actual_results_for_date
-)
+import sys
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -17,6 +8,70 @@ import json
 import pytz
 import flask
 
+# Python 경로에 현재 디렉토리 추가
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+# mlb_utils import 시도
+MLB_UTILS_AVAILABLE = False
+try:
+    import mlb_utils
+    from mlb_utils import (
+        get_today_boxscore_era_with_stats,
+        get_recent_data,
+        compare_rf_xgb_decision_improved,
+        analyze_and_report_performance,
+        load_csv_data,
+        list_available_csv_files,
+        check_and_update_csv_data,
+        get_actual_results_for_date
+    )
+    MLB_UTILS_AVAILABLE = True
+    print("✅ mlb_utils 모듈 import 성공")
+except ImportError as e:
+    print(f"⚠️ mlb_utils import 오류: {e}")
+    print(f"현재 디렉토리: {os.getcwd()}")
+    print(f"Python 경로: {sys.path}")
+    try:
+        print(f"사용 가능한 파일들: {os.listdir('.')}")
+    except:
+        print("디렉토리 목록 읽기 실패")
+    
+    # 대안적인 함수들 정의
+    def get_today_boxscore_era_with_stats():
+        print("⚠️ mlb_utils 없음: 빈 DataFrame 반환")
+        return pd.DataFrame()
+    
+    def get_recent_data(days=30):
+        print("⚠️ mlb_utils 없음: 빈 DataFrame 반환")
+        return pd.DataFrame()
+    
+    def compare_rf_xgb_decision_improved(df_historical, df_today, fast=False):
+        print("⚠️ mlb_utils 없음: 빈 리스트 반환")
+        return []
+    
+    def analyze_and_report_performance(predictions, actual_results):
+        print("⚠️ mlb_utils 없음: 빈 딕셔너리 반환")
+        return {}
+    
+    def load_csv_data(filename=None):
+        print("⚠️ mlb_utils 없음: None 반환")
+        return None
+    
+    def list_available_csv_files():
+        print("⚠️ mlb_utils 없음: 빈 리스트 반환")
+        return []
+    
+    def check_and_update_csv_data(filename, min_games=50, days_back=30, include_today=True):
+        print("⚠️ mlb_utils 없음: None 반환")
+        return None
+    
+    def get_actual_results_for_date(date_str):
+        print("⚠️ mlb_utils 없음: 빈 DataFrame 반환")
+        return pd.DataFrame()
+
+# Flask 앱 초기화
 app = Flask(__name__)
 
 # === numpy 타입 자동 변환을 위한 Flask 커스텀 인코더/Provider 버전별 적용 ===
@@ -1176,10 +1231,10 @@ if __name__ == '__main__':
     # templates 폴더 생성
     os.makedirs('templates', exist_ok=True)
     
-    print("🌐 MLB 예측 대시보드 시작 중...")
-    print("📱 브라우저에서 http://localhost:5000 으로 접속하세요")
-    print("🧑‍💻 Swagger UI: http://localhost:5000/apidocs")
+    print("🚀 MLB Dashboard 서버 시작 중...")
+    print(f"현재 디렉토리: {os.getcwd()}")
+    print(f"Python 경로: {sys.path}")
+    print(f"mlb_utils 사용 가능: {MLB_UTILS_AVAILABLE}")
     
-    # 환경에 따라 실행 모드 결정
-    debug_mode = os.environ.get('FLASK_ENV') == 'development'
-    app.run(debug=debug_mode, host='0.0.0.0', port=5000) 
+    # 개발 서버로 실행
+    app.run(host='0.0.0.0', port=5000, debug=True) 

@@ -48,4 +48,5 @@ limit_request_fields = 100
 limit_request_field_size = 8190
 
 # 디버깅을 위한 설정
-preload_app = False 
+preload_app = False
+reload = False 
