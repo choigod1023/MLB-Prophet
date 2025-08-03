@@ -3,8 +3,10 @@ import multiprocessing
 import os
 import sys
 
-# Python 경로 설정
-sys.path.insert(0, '/app')
+# Python 경로 설정 - 현재 디렉토리를 명시적으로 추가
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 # 바인딩할 주소와 포트
 bind = "0.0.0.0:5000"
@@ -49,4 +51,29 @@ limit_request_field_size = 8190
 
 # 디버깅을 위한 설정
 preload_app = False
-reload = False 
+reload = False
+
+# 모듈 로딩 디버깅
+def when_ready(server):
+    print(f"=== Gunicorn 서버 준비됨 ===")
+    print(f"현재 디렉토리: {os.getcwd()}")
+    print(f"Python 경로: {sys.path}")
+    print(f"사용 가능한 파일들: {os.listdir('.')}")
+    
+    # mlb_dashboard.py 파일 존재 확인
+    if os.path.exists('mlb_dashboard.py'):
+        print("✅ mlb_dashboard.py 파일 존재")
+        with open('mlb_dashboard.py', 'r') as f:
+            first_line = f.readline().strip()
+            print(f"첫 번째 줄: {first_line}")
+    else:
+        print("❌ mlb_dashboard.py 파일 없음")
+    
+    try:
+        import mlb_dashboard
+        print("✅ mlb_dashboard 모듈 import 성공")
+        print(f"모듈 위치: {mlb_dashboard.__file__}")
+    except ImportError as e:
+        print(f"❌ mlb_dashboard 모듈 import 실패: {e}")
+        import traceback
+        traceback.print_exc() 

@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir gunicorn==21.2.0
 # 모든 애플리케이션 파일들 복사
 COPY . .
 
+# Python 패키지 파일 확인
+RUN ls -la /app/__init__.py 2>/dev/null || echo "No __init__.py found"
+
 # 파일 존재 확인
 RUN ls -la /app/
 
@@ -32,5 +35,5 @@ ENV FLASK_APP=mlb_dashboard.py
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
-# 애플리케이션 실행 (프로덕션용 gunicorn 사용)
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "mlb_dashboard:app"] 
+# 애플리케이션 실행 (모듈 로딩 문제 해결을 위해 변경)
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "--chdir", "/app", "mlb_dashboard:app"] 

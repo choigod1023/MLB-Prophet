@@ -4,6 +4,7 @@ services:
   mlb-backend:
     build: .
     container_name: mlb-backend
+    working_dir: /app
     ports:
       - "5000:5000"
     volumes:
@@ -19,8 +20,9 @@ services:
       - FLASK_APP=mlb_dashboard.py
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
       - GUNICORN_CMD_ARGS=--workers=4 --timeout=120 --access-logfile=- --error-logfile=-
-    command: gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 --access-logfile - --error-logfile - mlb_dashboard:app
+    command: gunicorn --config gunicorn.conf.py --chdir /app mlb_dashboard:app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
