@@ -21,8 +21,7 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
-      - GUNICORN_CMD_ARGS=--workers=4 --timeout=120 --access-logfile=- --error-logfile=-
-    command: gunicorn --config gunicorn.conf.py --chdir /app mlb_dashboard:app
+    command: python mlb_dashboard.py
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
