@@ -18,26 +18,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir numpy==1.24.4
 RUN pip install --no-cache-dir gunicorn==21.2.0
 
-# 필수 파일들을 개별적으로 복사
-COPY mlb_dashboard.py ./
-RUN echo "mlb_dashboard.py 복사 완료" && ls -la /app/mlb_dashboard.py
-
-COPY mlb_utils.py ./
-RUN echo "mlb_utils.py 복사 완료" && ls -la /app/mlb_utils.py
-
-COPY gunicorn.conf.py ./
-RUN echo "gunicorn.conf.py 복사 완료" && ls -la /app/gunicorn.conf.py
-
-COPY __init__.py ./
-RUN echo "__init__.py 복사 완료" && ls -la /app/__init__.py
-
-COPY templates/ ./templates/
-RUN echo "templates/ 복사 완료" && ls -la /app/templates/
+# 모든 파일을 한 번에 복사
+COPY . .
 
 # 파일 존재 확인
-RUN echo "=== 복사 후 파일 목록 확인 ===" && ls -la /app/
-RUN echo "=== mlb_dashboard.py 확인 ===" && ls -la /app/mlb_dashboard.py || echo "mlb_dashboard.py 파일이 없습니다!"
-RUN echo "=== 파일 내용 확인 ===" && head -5 /app/mlb_dashboard.py || echo "파일을 읽을 수 없습니다!"
+RUN ls -la /app/
 
 # 포트 5000 노출
 EXPOSE 5000
@@ -47,5 +32,5 @@ ENV FLASK_APP=mlb_dashboard.py
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
-# 애플리케이션 실행 (디버깅을 위해 Python으로 직접 실행)
+# 애플리케이션 실행
 CMD ["python", "mlb_dashboard.py"] 
