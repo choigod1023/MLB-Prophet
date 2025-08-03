@@ -18,20 +18,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir numpy==1.24.4
 RUN pip install --no-cache-dir gunicorn==21.2.0
 
-# 필수 파일들을 명시적으로 복사
-COPY mlb_dashboard.py .
-COPY mlb_utils.py .
-COPY gunicorn.conf.py .
-COPY __init__.py .
-COPY templates/ templates/
+# 필수 파일들을 개별적으로 복사
+COPY mlb_dashboard.py ./
+COPY mlb_utils.py ./
+COPY gunicorn.conf.py ./
+COPY __init__.py ./
+COPY templates/ ./templates/
 
-# CSV 및 JSON 파일들 복사 (선택적)
-COPY *.csv . 2>/dev/null || echo "No CSV files to copy"
-COPY *.json . 2>/dev/null || echo "No JSON files to copy"
+# CSV 및 JSON 파일들 복사
+COPY *.csv ./ 2>/dev/null || echo "No CSV files found"
+COPY *.json ./ 2>/dev/null || echo "No JSON files found"
 
 # 파일 존재 확인
-RUN echo "=== 파일 목록 확인 ===" && ls -la /app/
-RUN echo "=== gunicorn.conf.py 확인 ===" && ls -la /app/gunicorn.conf.py
+RUN echo "=== 복사 후 파일 목록 확인 ===" && ls -la /app/
+RUN echo "=== mlb_dashboard.py 확인 ===" && ls -la /app/mlb_dashboard.py || echo "mlb_dashboard.py 파일이 없습니다!"
+RUN echo "=== 파일 내용 확인 ===" && head -5 /app/mlb_dashboard.py || echo "파일을 읽을 수 없습니다!"
 
 # 포트 5000 노출
 EXPOSE 5000
