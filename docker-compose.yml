@@ -5,8 +5,9 @@ services:
     build: .
     container_name: mlb-backend
     working_dir: /app
-    ports:
-      - "5000:5000"
+    # 외부 포트 노출 제거 (nginx를 통해서만 접근)
+    # ports:
+    #   - "5000:5000"
     volumes:
       # CSV 파일들을 볼륨으로 마운트 (개별 파일로)
       - ./mlb_2024to2025_20250703.csv:/app/mlb_2024to2025_20250703.csv
@@ -43,6 +44,7 @@ services:
       - mlb-backend
     networks:
       - mlb-network
+    restart: unless-stopped
 
 networks:
   mlb-network:
