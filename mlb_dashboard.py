@@ -13,6 +13,13 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
+# 디버깅 정보 출력
+print(f"=== mlb_dashboard.py 로드됨 ===")
+print(f"현재 작업 디렉토리: {os.getcwd()}")
+print(f"스크립트 위치: {current_dir}")
+print(f"Python 경로: {sys.path}")
+print(f"사용 가능한 파일들: {os.listdir('.')}")
+
 # mlb_utils import 시도
 MLB_UTILS_AVAILABLE = False
 try:

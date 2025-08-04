@@ -32,5 +32,5 @@ ENV FLASK_APP=mlb_dashboard.py
 ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
-# 애플리케이션 실행
-CMD ["python", "mlb_dashboard.py"] 
+# 애플리케이션 실행 (gunicorn 사용)
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "mlb_dashboard:app"] 
