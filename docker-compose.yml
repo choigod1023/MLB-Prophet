@@ -8,8 +8,9 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      # CSV 파일들을 볼륨으로 마운트
-      - ./*.csv:/app/
+      # CSV 파일들을 볼륨으로 마운트 (개별 파일로)
+      - ./mlb_2024to2025_20250703.csv:/app/mlb_2024to2025_20250703.csv
+      - ./mlb_recent200games_improved_20250707.csv:/app/mlb_recent200games_improved_20250707.csv
       # 데이터 파일들을 볼륨으로 마운트 (선택사항 - 폴더가 있을 때만)
       # - ./data:/app/data
       # 로그 파일들을 볼륨으로 마운트 (선택사항 - 폴더가 있을 때만)
