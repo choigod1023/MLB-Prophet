@@ -566,7 +566,7 @@
 
         // CSV 파일 목록 불러오기
         function fetchCsvFiles() {
-            fetch('/api/csv-files')
+            fetch('/mlb/api/csv-files')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -608,7 +608,7 @@
                 </div>
             `;
 
-            fetch('/api/predict', {
+            fetch('/mlb/api/predict', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -660,7 +660,7 @@
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장 중...';
 
-            fetch('/api/save-current-predictions', {
+            fetch('/mlb/api/save-current-predictions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -677,7 +677,7 @@
                         // 파일 다운로드
                         if (data.filename) {
                             const link = document.createElement('a');
-                            link.href = `/api/download-file/${data.filename}`;
+                            link.href = `/mlb/api/download-file/${data.filename}`;
                             link.download = data.filename;
                             document.body.appendChild(link);
                             link.click();
@@ -711,7 +711,7 @@
                 </div>
             `;
 
-            fetch('/api/performance')
+            fetch('/mlb/api/performance')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('HTTP ' + response.status);
@@ -751,7 +751,7 @@
             if (!date) return;
             const container = document.getElementById('todayGamesContainer');
             container.innerHTML = `<p class="text-muted text-center"><i class="fas fa-spinner fa-spin"></i> 경기 결과를 불러오는 중...</p>`;
-            fetch('/api/check-results', {
+            fetch('/mlb/api/check-results', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ date: date })
