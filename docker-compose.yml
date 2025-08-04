@@ -10,10 +10,10 @@ services:
     volumes:
       # CSV 파일들을 볼륨으로 마운트
       - ./*.csv:/app/
-      # 데이터 파일들을 볼륨으로 마운트 (선택사항)
-      - ./data:/app/data
-      # 로그 파일들을 볼륨으로 마운트
-      - ./logs:/app/logs
+      # 데이터 파일들을 볼륨으로 마운트 (선택사항 - 폴더가 있을 때만)
+      # - ./data:/app/data
+      # 로그 파일들을 볼륨으로 마운트 (선택사항 - 폴더가 있을 때만)
+      # - ./logs:/app/logs
       # 출력 로그 파일 마운트 (비활성화)
       # - ./output.log:/app/output.log
     environment:
@@ -21,7 +21,7 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
-    command: gunicorn --config gunicorn.conf.py mlb_dashboard:app
+    command: sh -c "pwd && ls -la && echo '=== gunicorn 실행 ===' && python -c 'import sys; print(sys.path)' && gunicorn --config gunicorn.conf.py mlb_dashboard:app"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]

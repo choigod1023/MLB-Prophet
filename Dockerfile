@@ -23,6 +23,10 @@ COPY . .
 
 # 파일 존재 확인
 RUN ls -la /app/
+RUN echo "=== 중요 파일들 확인 ==="
+RUN ls -la /app/gunicorn.conf.py || echo "gunicorn.conf.py 없음"
+RUN ls -la /app/mlb_dashboard.py || echo "mlb_dashboard.py 없음"
+RUN ls -la /app/mlb_utils.py || echo "mlb_utils.py 없음"
 
 # 포트 5000 노출
 EXPOSE 5000
@@ -33,4 +37,4 @@ ENV FLASK_ENV=production
 ENV PYTHONPATH=/app
 
 # 애플리케이션 실행 (gunicorn 사용)
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "mlb_dashboard:app"] 
+CMD ["sh", "-c", "pwd && ls -la && echo '=== gunicorn 실행 ===' && python -c 'import sys; print(sys.path)' && gunicorn --config gunicorn.conf.py mlb_dashboard:app"] 
