@@ -142,6 +142,68 @@ New York Yankees vs Boston Red Sox (KST 06/25 08:00)
 [XGB] 홈팀 승률: 62.8% → 홈팀 우세  예상 스코어: 5 - 3
 ```
 
+## 🧠 예측 모델
+
+승패(분류)와 스코어(회귀)를 함께 예측하는 머신러닝 파이프라인입니다. 핵심 로직은
+모두 `mlb_utils.py`에 있으며, MLB-StatsAPI에서 수집한 경기별 박스스코어를 학습
+데이터로 사용합니다.
+
+### 1. 데이터 & 피처
+
+MLB-StatsAPI의 박스스코어(`boxscore_data`)에서 경기 단위로 다음 지표를 수집합니다.
+홈/원정 각각에 대해 **선발투수 기록 + 팀 시즌 타격/투구 지표**를 사용합니다.
+
+| 구분 | 피처 |
+|------|------|
+| 선발투수 | `pitcher_era`, `pitcher_whip` |
+| 팀 타격 | `ops`, `avg`, `slg` |
+| 팀 투구 | `era`, `whip` |
+
+- **Full 모드** (14개 피처): 위 7개 지표 × 홈/원정
+- **Fast 모드** (6개 피처): `pitcher_era`, `ops`, `era` × 홈/원정 — 응답 속도 우선
+- 결측치는 컬럼 평균으로 대치하고, `±inf`는 평균 → 0 순으로 보정합니다.
+- 학습에는 최소 50경기 이상의 클린 데이터가 필요합니다(부족 시 예측 중단).
+- 분류·회귀 입력은 `StandardScaler`로 표준화합니다.
+
+### 2. 승패 예측 (분류)
+
+같은 피처로 **RandomForest와 XGBoost 두 모델을 동시에** 학습해 결과를 비교 제시합니다
+(`compare_rf_xgb_decision_improved`). 타깃은 `home_win`(홈팀 승=1).
+
+- `RandomForestClassifier(n_estimators=100, max_depth=10)`
+- `XGBClassifier(n_estimators=100, max_depth=6)`
+- 출력 홈 승률은 과신 방지를 위해 **0.05 ~ 0.95로 클리핑**합니다.
+
+### 3. 스코어 예측 (회귀)
+
+홈/원정 득점을 각각 회귀로 예측합니다. 기본 비교용은 RF/XGB Regressor를 사용하고,
+정교화된 `predict_score_with_margin`은 **XGBoost 회귀 4종**으로 점수·점수차·승률을
+함께 추정합니다.
+
+- 모델: `XGBRegressor(n_estimators=200, max_depth=8, learning_rate=0.1, subsample=0.8, colsample_bytree=0.8)`
+- 타깃: `home_score`, `away_score`, `score_margin`(=홈−원정), `home_win`
+- **야구 도메인 후처리**로 모델 출력을 보정합니다:
+  - 동점 예측 시 연장전 홈 어드밴티지(홈 55%)를 가중 평균
+  - 점수차에 비례한 승률 조정(최대 ±40%)
+  - 선발 ERA 차·팀 OPS 차에 따른 미세 조정 + 홈 어드밴티지 +2%p
+  - 최종 승률은 다시 0.05 ~ 0.95로 클리핑
+
+### 4. 베팅 기회 분석 (참고용)
+
+`analyze_betting_opportunities`가 신뢰도(|승률−0.5|×2)와 예상 점수차를 점수화해
+`강력 추천 / 추천 / 관심 / 관망` 등급과 근거를 함께 제시합니다. 실제 베팅이 아닌
+모델 신뢰도 해석을 위한 참고 지표입니다.
+
+### 5. 성능 평가 & 재현성
+
+- `analyze_and_report_performance`: 누적 예측 vs 실제 결과로 **승패 적중률**과
+  **평균 스코어 오차**(홈/원정/합계)를 산출합니다.
+- 모든 모델은 `random_state=42`로 고정해 동일 입력 → 동일 출력을 보장합니다.
+
+> ⚠️ **한계**: 현재는 시즌 누적 지표 기반의 단판 예측으로, 시간 순서 분리(walk-forward)
+> 검증이나 라인업·구장·날씨 등 경기 맥락은 반영하지 않습니다. 예측은 참고용이며 향후
+> 개선 대상입니다.
+
 ## 🔧 기술 스택
 
 ### 백엔드
