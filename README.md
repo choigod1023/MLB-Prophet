@@ -29,13 +29,20 @@ KBO/
 ├── gunicorn.conf.py                # 프로덕션 WSGI 설정
 ├── deploy-simple.sh                # 개발 배포 스크립트
 ├── deploy-production.sh             # 프로덕션 배포 스크립트
+├── webhook-receiver.py             # GitHub webhook 기반 자동 배포 수신기
+├── webhook-receiver.service        # 위 수신기 systemd 유닛
 ├── nginx/                          # Nginx 설정
 │   ├── nginx.conf                  # Nginx 프록시 설정
 │   ├── nginx-proxy.yml             # 프로덕션 Docker Compose
 │   └── index.html                  # 소개 페이지
-└── templates/
-    └── dashboard.html               # 웹 대시보드 템플릿
+├── templates/
+│   └── dashboard.html               # Flask 웹 대시보드 템플릿
+└── mlb-frontend/                   # React(Vite + TS) 프론트엔드 (Flask API 소비)
+    └── src/                        # 컴포넌트·api.ts (http://localhost:5000/api 호출)
 ```
+
+> 참고: 대시보드는 서버 렌더링(`templates/dashboard.html`)과 별개로, `mlb-frontend/`에
+> React 19 + Vite + TypeScript 기반 SPA도 함께 두고 있습니다(`src/api.ts`가 Flask API를 호출).
 
 ## ⚡️ 빠른 시작
 
@@ -221,11 +228,27 @@ MLB-StatsAPI의 박스스코어(`boxscore_data`)에서 경기 단위로 다음 �
 - **Nginx**: 리버스 프록시
 - **Gunicorn**: 프로덕션 WSGI 서버
 
+### 프론트엔드
+
+- **React 19 + Vite + TypeScript**: `mlb-frontend/` SPA
+- **Chart.js**: 예측/성능 시각화
+- **Bootstrap, react-datepicker**: UI
+
 ### 데이터 & API
 
 - **MLB-StatsAPI**: 실시간 데이터
 - **CSV/JSON**: 데이터 저장
 - **Swagger**: API 문서화
+
+## 🔑 환경변수
+
+코드에서 실제로 참조하는 환경변수는 다음과 같습니다(모두 기본값이 있어 미설정 시에도 동작).
+
+| 변수 | 위치 | 설명 | 기본값 |
+|------|------|------|--------|
+| `FLASK_ENV` | `mlb_dashboard.py` | `development`이면 Flask debug 모드 활성화 | (미설정) |
+| `WEBHOOK_SECRET` | `webhook-receiver.py` | GitHub webhook 서명 검증용 시크릿 | `your-webhook-secret` |
+| `PROJECT_DIR` | `webhook-receiver.py` | 자동 배포 시 pull/재시작할 프로젝트 경로 | `/home/ubuntu/MLB-Proph` |
 
 ## 🚀 배포 가이드
 
