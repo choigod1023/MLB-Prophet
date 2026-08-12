@@ -346,4 +346,4 @@ docker-compose -f nginx/nginx-proxy.yml up -d --build --no-cache
 | **Contributors** | 1 |
 | **AI coding tool** | Claude Code |
 
-<sub>Counting basis: commits reachable from **every branch** on origin (merge commits and empty commits excluded), counted by commit author email with one person’s multiple addresses merged; bot and automation commits are excluded.</sub>
+<sub>Counting basis (snapshot as of 2026-08-12): commits reachable from **every branch** on origin (merge commits and empty commits excluded), counted by commit author email with one person’s multiple addresses merged; bot and automation commits are excluded.</sub>
