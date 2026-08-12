@@ -1,5 +1,7 @@
 # MLB Prophet - AI 기반 야구 예측 서비스
 
+**한국어** · [日本語](README.ja.md) · [English](README.en.md)
+
 MLB-StatsAPI + 머신러닝 기반 예측 시스템으로, 웹 대시보드와 CLI를 모두 지원하는 완전한 야구 예측 서비스입니다.
 
 ## 🚀 주요 기능
